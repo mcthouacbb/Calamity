@@ -1,3 +1,5 @@
+use core::fmt;
+
 use arrayvec::ArrayVec;
 
 use crate::board::{Board, GameResult};
@@ -12,13 +14,23 @@ pub enum Square {
 }
 
 impl Square {
-    fn from_raw(raw: u8) -> Self {
+    pub fn from_raw(raw: u8) -> Self {
         unsafe { std::mem::transmute(raw) }
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Move(Square);
+
+impl Move {
+    pub fn new(sq: Square) -> Self {
+        Self(sq)
+    }
+
+    pub fn to_sq(self) -> Square {
+        self.0
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
@@ -28,7 +40,7 @@ pub enum Color {
 }
 
 impl Color {
-    fn flip(self) -> Self {
+    pub fn flip(self) -> Self {
         match self {
             Self::X => Self::O,
             Self::O => Self::X,
@@ -92,7 +104,7 @@ impl Board for TicTacToeBoard {
         let mut moves = Self::MoveList::new();
         for i in 0..9 {
             if self.squares[i].is_none() {
-                moves.push(Move(Square::from_raw(i as u8)));
+                moves.push(Move::new(Square::from_raw(i as u8)));
             }
         }
         moves
@@ -103,5 +115,26 @@ impl Board for TicTacToeBoard {
         new_board.squares[mv.0 as usize] = Some(self.stm);
         new_board.stm = self.stm.flip();
         Some(new_board)
+    }
+}
+
+impl fmt::Display for TicTacToeBoard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "-----\n")?;
+        for rank in (0..3).rev() {
+            write!(f, "|")?;
+            for file in 0..3 {
+                let sq = rank * 3 + file;
+                match self.squares[sq] {
+                    Some(c) => write!(f, "{:?}", c)?,
+                    None => write!(f, ".")?,
+                }
+            }
+            write!(f, "|\n")?;
+        }
+        write!(f, "-----\n")?;
+        write!(f, "stm: {:?}", self.stm)?;
+
+        Ok(())
     }
 }

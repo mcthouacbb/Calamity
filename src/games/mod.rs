@@ -1,1 +1,1 @@
-mod tictactoe;
+pub mod tictactoe;
