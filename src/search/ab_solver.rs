@@ -34,7 +34,7 @@ impl<B: Board> ABSolver<B> {
             };
             self.nodes += 1;
 
-            let score = -self.alpha_beta(&new_board, ply + 1, -alpha, -beta);
+            let score = -self.alpha_beta(&new_board, ply + 1, -beta, -alpha);
 
             if score > best_score {
                 best_score = score;
