@@ -58,7 +58,7 @@ pub struct TicTacToeBoard {
 
 impl Board for TicTacToeBoard {
     type Color = Color;
-    // lol
+    // only one type of piece
     type PieceType = ();
     type Piece = Color;
     type Square = Square;
@@ -93,7 +93,12 @@ impl Board for TicTacToeBoard {
         if self.squares[2] == opp && self.squares[4] == opp && self.squares[6] == opp {
             return GameResult::LOSS;
         }
-        GameResult::NONE
+        for i in 0..9 {
+            if self.squares[i].is_none() {
+                return GameResult::NONE;
+            }
+        }
+        GameResult::DRAW
     }
 
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece> {

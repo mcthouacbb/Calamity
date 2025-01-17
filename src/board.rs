@@ -1,3 +1,4 @@
+#[derive(Debug, Copy, Clone)]
 pub enum GameResult {
     NONE,
     WIN,
@@ -6,12 +7,12 @@ pub enum GameResult {
 }
 
 pub trait Board: Sized {
-    type Move;
-    type Square;
-    type PieceType;
-    type Color;
-    type Piece;
-    type MoveList: IntoIterator;
+    type Move: Copy + Clone + PartialEq + Eq;
+    type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
+    type PieceType: Copy + Clone;
+    type Color: Copy + Clone;
+    type Piece: Copy + Clone;
+    type MoveList: IntoIterator<Item = Self::Move>;
 
     fn startpos() -> Self;
 
