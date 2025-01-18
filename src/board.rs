@@ -6,7 +6,7 @@ pub enum GameResult {
     LOSS,
 }
 
-pub trait Board: Sized {
+pub trait Board: Sized + Clone {
     type Move: Copy + Clone + PartialEq + Eq;
     type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
     type PieceType: Copy + Clone;
@@ -20,5 +20,6 @@ pub trait Board: Sized {
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece>;
     fn gen_moves(&self) -> Self::MoveList;
 
-    fn make_move(&self, mv: Self::Move) -> Option<Self>;
+    fn make_move(&mut self, mv: Self::Move) -> bool;
+    fn unmake_move(&mut self);
 }

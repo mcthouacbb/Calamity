@@ -10,9 +10,9 @@ use search::{
 };
 
 fn main() {
-    let board = TicTacToeBoard::startpos();
-    let board = board.make_move(Move::new(Square::A1)).unwrap();
-    let board = board.make_move(Move::new(Square::A2)).unwrap();
+    let mut board = TicTacToeBoard::startpos();
+    board.make_move(Move::new(Square::A1));
+    board.make_move(Move::new(Square::A2));
     println!("{}", board);
 
     let mut solver = ABSolver::<TicTacToeBoard>::new();

@@ -19,7 +19,7 @@ impl<B: Board> ABSolver<B> {
         }
     }
 
-    fn alpha_beta(&mut self, board: &B, ply: i32, mut alpha: i32, beta: i32) -> i32 {
+    fn alpha_beta(&mut self, board: &mut B, ply: i32, mut alpha: i32, beta: i32) -> i32 {
         match board.game_result() {
             GameResult::WIN => return Self::SCORE_WIN - ply,
             GameResult::DRAW => return 0,
@@ -29,12 +29,14 @@ impl<B: Board> ABSolver<B> {
         let moves = board.gen_moves();
         let mut best_score = -Self::SCORE_WIN;
         for mv in moves {
-            let Some(new_board) = board.make_move(mv) else {
-                continue;
-            };
+			if !board.make_move(mv) {
+				continue;
+			}
             self.nodes += 1;
 
-            let score = -self.alpha_beta(&new_board, ply + 1, -beta, -alpha);
+            let score = -self.alpha_beta(board, ply + 1, -beta, -alpha);
+
+			board.unmake_move();
 
             if score > best_score {
                 best_score = score;
@@ -60,8 +62,10 @@ impl<B: Board> Search<B> for ABSolver<B> {
     fn search(&mut self, board: &B, limits: SearchLimits) -> SearchResult<B> {
         self.nodes = 0;
         self.root_best_move = None;
+		let mut tmp_board = board.clone();
+
         let start_time = Instant::now();
-        let score = self.alpha_beta(board, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
+        let score = self.alpha_beta(&mut tmp_board, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
         let end_time = Instant::now();
 
         SearchResult {

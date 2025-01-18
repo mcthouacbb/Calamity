@@ -53,6 +53,7 @@ type Piece = Color;
 #[derive(Debug, Clone)]
 pub struct TicTacToeBoard {
     squares: [Option<Piece>; 9],
+    stack: ArrayVec<Move, 9>,
     stm: Color,
 }
 
@@ -68,6 +69,7 @@ impl Board for TicTacToeBoard {
     fn startpos() -> Self {
         TicTacToeBoard {
             squares: [None; 9],
+            stack: ArrayVec::new(),
             stm: Color::X,
         }
     }
@@ -115,11 +117,17 @@ impl Board for TicTacToeBoard {
         moves
     }
 
-    fn make_move(&self, mv: Self::Move) -> Option<Self> {
-        let mut new_board = self.clone();
-        new_board.squares[mv.0 as usize] = Some(self.stm);
-        new_board.stm = self.stm.flip();
-        Some(new_board)
+    fn make_move(&mut self, mv: Self::Move) -> bool {
+        self.stack.push(mv);
+        self.squares[mv.to_sq() as usize] = Some(self.stm);
+        self.stm = self.stm.flip();
+        true
+    }
+
+    fn unmake_move(&mut self) {
+        let prev_move = self.stack.pop().unwrap();
+        self.squares[prev_move.to_sq() as usize] = None;
+        self.stm = self.stm.flip();
     }
 }
 
