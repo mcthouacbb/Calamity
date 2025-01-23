@@ -29,14 +29,14 @@ impl<B: Board> ABSolver<B> {
         let moves = board.gen_moves();
         let mut best_score = -Self::SCORE_WIN;
         for mv in moves {
-			if !board.make_move(mv) {
-				continue;
-			}
+            if !board.make_move(mv) {
+                continue;
+            }
             self.nodes += 1;
 
             let score = -self.alpha_beta(board, ply + 1, -beta, -alpha);
 
-			board.unmake_move();
+            board.unmake_move();
 
             if score > best_score {
                 best_score = score;
@@ -62,7 +62,7 @@ impl<B: Board> Search<B> for ABSolver<B> {
     fn search(&mut self, board: &B, limits: SearchLimits) -> SearchResult<B> {
         self.nodes = 0;
         self.root_best_move = None;
-		let mut tmp_board = board.clone();
+        let mut tmp_board = board.clone();
 
         let start_time = Instant::now();
         let score = self.alpha_beta(&mut tmp_board, 0, -Self::SCORE_WIN, Self::SCORE_WIN);

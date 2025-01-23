@@ -4,7 +4,7 @@ mod search;
 mod util;
 
 use board::Board;
-use games::tictactoe::{TicTacToeMove, TicTacToeSquare, TicTacToeBoard};
+use games::tictactoe::{TicTacToeBoard, TicTacToeMove, TicTacToeSquare};
 use search::{
     ab_solver::ABSolver,
     search::{Search, SearchLimits},

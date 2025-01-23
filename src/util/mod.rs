@@ -1,5 +1,5 @@
 mod bitboard;
 mod square;
 
-pub use square::Square;
 pub use bitboard::Bitboard;
+pub use square::Square;
