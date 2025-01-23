@@ -3,31 +3,19 @@ use core::fmt;
 use arrayvec::ArrayVec;
 
 use crate::board::{Board, GameResult};
+use crate::util::Square;
 
-#[rustfmt::skip]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u8)]
-pub enum Square {
-    A1, B1, C1,
-    A2, B2, C2,
-    A3, B3, C3,
-}
+pub type TicTacToeSquare = Square<3, 3>;
 
-impl Square {
-    pub fn from_raw(raw: u8) -> Self {
-        unsafe { std::mem::transmute(raw) }
-    }
-}
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct TicTacToeMove(TicTacToeSquare);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Move(Square);
-
-impl Move {
-    pub fn new(sq: Square) -> Self {
+impl TicTacToeMove {
+    pub fn new(sq: TicTacToeSquare) -> Self {
         Self(sq)
     }
 
-    pub fn to_sq(self) -> Square {
+    pub fn to_sq(self) -> TicTacToeSquare {
         self.0
     }
 }
@@ -53,7 +41,7 @@ type Piece = Color;
 #[derive(Debug, Clone)]
 pub struct TicTacToeBoard {
     squares: [Option<Piece>; 9],
-    stack: ArrayVec<Move, 9>,
+    stack: ArrayVec<TicTacToeMove, 9>,
     stm: Color,
 }
 
@@ -62,9 +50,9 @@ impl Board for TicTacToeBoard {
     // only one type of piece
     type PieceType = ();
     type Piece = Color;
-    type Square = Square;
-    type Move = Move;
-    type MoveList = ArrayVec<Move, 9>;
+    type Square = TicTacToeSquare;
+    type Move = TicTacToeMove;
+    type MoveList = ArrayVec<TicTacToeMove, 9>;
 
     fn startpos() -> Self {
         TicTacToeBoard {
@@ -104,14 +92,14 @@ impl Board for TicTacToeBoard {
     }
 
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece> {
-        self.squares[sq as usize]
+        self.squares[sq.value() as usize]
     }
 
     fn gen_moves(&self) -> Self::MoveList {
         let mut moves = Self::MoveList::new();
         for i in 0..9 {
             if self.squares[i].is_none() {
-                moves.push(Move::new(Square::from_raw(i as u8)));
+                moves.push(TicTacToeMove::new(Square::from_raw(i as u16)));
             }
         }
         moves
@@ -119,14 +107,14 @@ impl Board for TicTacToeBoard {
 
     fn make_move(&mut self, mv: Self::Move) -> bool {
         self.stack.push(mv);
-        self.squares[mv.to_sq() as usize] = Some(self.stm);
+        self.squares[mv.to_sq().value() as usize] = Some(self.stm);
         self.stm = self.stm.flip();
         true
     }
 
     fn unmake_move(&mut self) {
         let prev_move = self.stack.pop().unwrap();
-        self.squares[prev_move.to_sq() as usize] = None;
+        self.squares[prev_move.to_sq().value() as usize] = None;
         self.stm = self.stm.flip();
     }
 }

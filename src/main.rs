@@ -1,9 +1,10 @@
 mod board;
 mod games;
 mod search;
+mod util;
 
 use board::Board;
-use games::tictactoe::{Move, Square, TicTacToeBoard};
+use games::tictactoe::{TicTacToeMove, TicTacToeSquare, TicTacToeBoard};
 use search::{
     ab_solver::ABSolver,
     search::{Search, SearchLimits},
@@ -11,8 +12,8 @@ use search::{
 
 fn main() {
     let mut board = TicTacToeBoard::startpos();
-    board.make_move(Move::new(Square::A1));
-    board.make_move(Move::new(Square::A2));
+    board.make_move(TicTacToeMove::new(TicTacToeSquare::from_rank_file(0, 0)));
+    board.make_move(TicTacToeMove::new(TicTacToeSquare::from_rank_file(1, 0)));
     println!("{}", board);
 
     let mut solver = ABSolver::<TicTacToeBoard>::new();
