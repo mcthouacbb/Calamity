@@ -22,12 +22,12 @@ impl TicTacToeMove {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
-pub enum Color {
+pub enum TicTacToeColor {
     X,
     O,
 }
 
-impl Color {
+impl TicTacToeColor {
     pub fn flip(self) -> Self {
         match self {
             Self::X => Self::O,
@@ -36,20 +36,20 @@ impl Color {
     }
 }
 
-type Piece = Color;
+type Piece = TicTacToeColor;
 
 #[derive(Debug, Clone)]
 pub struct TicTacToeBoard {
     squares: [Option<Piece>; 9],
     stack: ArrayVec<TicTacToeMove, 9>,
-    stm: Color,
+    stm: TicTacToeColor,
 }
 
 impl Board for TicTacToeBoard {
-    type Color = Color;
+    type Color = TicTacToeColor;
     // only one type of piece
     type PieceType = ();
-    type Piece = Color;
+    type Piece = TicTacToeColor;
     type Square = TicTacToeSquare;
     type Move = TicTacToeMove;
     type MoveList = ArrayVec<TicTacToeMove, 9>;
@@ -58,7 +58,7 @@ impl Board for TicTacToeBoard {
         TicTacToeBoard {
             squares: [None; 9],
             stack: ArrayVec::new(),
-            stm: Color::X,
+            stm: TicTacToeColor::X,
         }
     }
 
