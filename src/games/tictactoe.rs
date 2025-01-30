@@ -1,9 +1,10 @@
 use core::fmt;
+use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
 
 use crate::board::{Board, GameResult};
-use crate::util::Square;
+use crate::util::{parse_fen_pieces, Square};
 
 pub type TicTacToeSquare = Square<3, 3>;
 
@@ -70,59 +71,15 @@ impl Board for TicTacToeBoard {
             return None;
         }
 
-        const WIDTH: i32 = 3;
-        const HEIGHT: i32 = 3;
-
-        let mut curr_file = 0;
-        let mut curr_rank = HEIGHT - 1;
-        for c in parts[0].chars() {
-            match c {
-                '1'..='3' => {
-                    if curr_file + c as i32 - '0' as i32 > WIDTH as i32 {
-                        // cannot move off the end of a row
-                        return None;
-                    }
-                    curr_file += c as i32 - '0' as i32;
-                }
-                'X' => {
-                    if curr_file == WIDTH {
-                        // cannot fill in extra pieces on a row
-                        return None;
-                    }
-                    board.squares[(curr_file + WIDTH * curr_rank) as usize] =
-                        Some(TicTacToeColor::X);
-                    curr_file += 1;
-                }
-                'O' => {
-                    if curr_file == WIDTH {
-                        // cannot fill in extra pieces on a row
-                        return None;
-                    }
-                    board.squares[(curr_file + WIDTH * curr_rank) as usize] =
-                        Some(TicTacToeColor::O);
-                    curr_file += 1;
-                }
-                '/' => {
-                    if curr_file != WIDTH {
-                        // slash must come after filling in all the pieces
-                        return None;
-                    }
-                    if curr_rank == 0 {
-                        // cannot end with slash
-                        return None;
-                    }
-                    curr_file = 0;
-                    curr_rank -= 1;
-                }
-                _ => {
-                    // unexpected/invalid character
-                    return None;
-                }
-            }
-        }
-
-        if curr_file != WIDTH || curr_rank != 0 {
-            // did not fill in the whole board properly
+        let result = parse_fen_pieces(
+            |sq: i32, piece: TicTacToeColor| board.squares[sq as usize] = Some(piece),
+            parts[0],
+            3,
+            3,
+            HashMap::from([('X', TicTacToeColor::X), ('O', TicTacToeColor::O)]),
+        );
+        // todo: add better error handling
+        if result.is_err() {
             return None;
         }
 
