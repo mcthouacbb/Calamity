@@ -1,9 +1,10 @@
 use core::fmt;
+use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
 
 use crate::board::{Board, GameResult};
-use crate::util::Square;
+use crate::util::{parse_fen_pieces, Square};
 
 pub type TicTacToeSquare = Square<3, 3>;
 
@@ -55,11 +56,43 @@ impl Board for TicTacToeBoard {
     type MoveList = ArrayVec<TicTacToeMove, 9>;
 
     fn startpos() -> Self {
-        TicTacToeBoard {
+        Self::from_fen("3/3/3 X").unwrap()
+    }
+
+    fn from_fen(fen: &str) -> Option<Self> {
+        let mut board = TicTacToeBoard {
             squares: [None; 9],
             stack: ArrayVec::new(),
             stm: TicTacToeColor::X,
+        };
+
+        let parts: Vec<&str> = fen.split_whitespace().collect();
+        if parts.len() != 2 {
+            return None;
         }
+
+        let result = parse_fen_pieces(
+            |sq: i32, piece: TicTacToeColor| board.squares[sq as usize] = Some(piece),
+            parts[0],
+            3,
+            3,
+            HashMap::from([('X', TicTacToeColor::X), ('O', TicTacToeColor::O)]),
+        );
+        // todo: add better error handling
+        if result.is_err() {
+            return None;
+        }
+
+        if parts[1] == "X" {
+            board.stm = TicTacToeColor::X;
+        } else if parts[1] == "O" {
+            board.stm = TicTacToeColor::O;
+        } else {
+            // invalid stm
+            return None;
+        }
+
+        Some(board)
     }
 
     fn game_result(&self) -> GameResult {

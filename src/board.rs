@@ -15,6 +15,8 @@ pub trait Board: Sized + Clone {
     type MoveList: IntoIterator<Item = Self::Move>;
 
     fn startpos() -> Self;
+    // todo: make this a Result instead of Option
+    fn from_fen(fen: &str) -> Option<Self>;
 
     fn game_result(&self) -> GameResult;
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece>;
