@@ -11,9 +11,7 @@ use search::{
 };
 
 fn main() {
-    let mut board = TicTacToeBoard::startpos();
-    board.make_move(TicTacToeMove::new(TicTacToeSquare::from_rank_file(0, 0)));
-    board.make_move(TicTacToeMove::new(TicTacToeSquare::from_rank_file(1, 0)));
+    let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);
 
     let mut solver = ABSolver::<TicTacToeBoard>::new();

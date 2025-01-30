@@ -55,11 +55,87 @@ impl Board for TicTacToeBoard {
     type MoveList = ArrayVec<TicTacToeMove, 9>;
 
     fn startpos() -> Self {
-        TicTacToeBoard {
+        Self::from_fen("3/3/3 X").unwrap()
+    }
+
+    fn from_fen(fen: &str) -> Option<Self> {
+        let mut board = TicTacToeBoard {
             squares: [None; 9],
             stack: ArrayVec::new(),
             stm: TicTacToeColor::X,
+        };
+
+        let parts: Vec<&str> = fen.split_whitespace().collect();
+        if parts.len() != 2 {
+            return None;
         }
+
+        const WIDTH: i32 = 3;
+        const HEIGHT: i32 = 3;
+
+        let mut curr_file = 0;
+        let mut curr_rank = HEIGHT - 1;
+        for c in parts[0].chars() {
+            match c {
+                '1'..='3' => {
+                    if curr_file + c as i32 - '0' as i32 > WIDTH as i32 {
+                        // cannot move off the end of a row
+                        return None;
+                    }
+                    curr_file += c as i32 - '0' as i32;
+                }
+                'X' => {
+                    if curr_file == WIDTH {
+                        // cannot fill in extra pieces on a row
+                        return None;
+                    }
+                    board.squares[(curr_file + WIDTH * curr_rank) as usize] =
+                        Some(TicTacToeColor::X);
+                    curr_file += 1;
+                }
+                'O' => {
+                    if curr_file == WIDTH {
+                        // cannot fill in extra pieces on a row
+                        return None;
+                    }
+                    board.squares[(curr_file + WIDTH * curr_rank) as usize] =
+                        Some(TicTacToeColor::O);
+                    curr_file += 1;
+                }
+                '/' => {
+                    if curr_file != WIDTH {
+                        // slash must come after filling in all the pieces
+                        return None;
+                    }
+                    if curr_rank == 0 {
+                        // cannot end with slash
+                        return None;
+                    }
+                    curr_file = 0;
+                    curr_rank -= 1;
+                }
+                _ => {
+                    // unexpected/invalid character
+                    return None;
+                }
+            }
+        }
+
+        if curr_file != WIDTH || curr_rank != 0 {
+            // did not fill in the whole board properly
+            return None;
+        }
+
+        if parts[1] == "X" {
+            board.stm = TicTacToeColor::X;
+        } else if parts[1] == "O" {
+            board.stm = TicTacToeColor::O;
+        } else {
+            // invalid stm
+            return None;
+        }
+
+        Some(board)
     }
 
     fn game_result(&self) -> GameResult {
