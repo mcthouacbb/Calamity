@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::Board;
+use crate::games::board::Board;
 
 #[derive(Debug, Clone, Default)]
 pub struct SearchResult<B: Board> {

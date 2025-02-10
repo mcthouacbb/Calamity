@@ -3,8 +3,9 @@ use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
 
-use crate::board::{Board, GameResult};
 use crate::util::{parse_fen_pieces, Square};
+
+use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
 
 pub type TicTacToeSquare = Square<3, 3>;
 
@@ -40,13 +41,12 @@ impl TicTacToeColor {
 type Piece = TicTacToeColor;
 
 #[derive(Debug, Clone)]
-pub struct TicTacToeBoard {
+pub struct TicTacToeState {
     squares: [Option<Piece>; 9],
-    stack: ArrayVec<TicTacToeMove, 9>,
     stm: TicTacToeColor,
 }
 
-impl Board for TicTacToeBoard {
+impl CopyMakeBoard for TicTacToeState {
     type Color = TicTacToeColor;
     // only one type of piece
     type PieceType = ();
@@ -60,9 +60,8 @@ impl Board for TicTacToeBoard {
     }
 
     fn from_fen(fen: &str) -> Option<Self> {
-        let mut board = TicTacToeBoard {
+        let mut board = TicTacToeState {
             squares: [None; 9],
-            stack: ArrayVec::new(),
             stm: TicTacToeColor::X,
         };
 
@@ -139,20 +138,13 @@ impl Board for TicTacToeBoard {
     }
 
     fn make_move(&mut self, mv: Self::Move) -> bool {
-        self.stack.push(mv);
         self.squares[mv.to_sq().value() as usize] = Some(self.stm);
         self.stm = self.stm.flip();
         true
     }
-
-    fn unmake_move(&mut self) {
-        let prev_move = self.stack.pop().unwrap();
-        self.squares[prev_move.to_sq().value() as usize] = None;
-        self.stm = self.stm.flip();
-    }
 }
 
-impl fmt::Display for TicTacToeBoard {
+impl fmt::Display for TicTacToeState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "-----\n")?;
         for rank in (0..3).rev() {
@@ -172,3 +164,5 @@ impl fmt::Display for TicTacToeBoard {
         Ok(())
     }
 }
+
+pub type TicTacToeBoard = CopyMakeWrapper<TicTacToeState>;
