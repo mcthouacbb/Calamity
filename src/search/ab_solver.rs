@@ -1,6 +1,6 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
-use crate::board::{Board, GameResult};
+use crate::games::board::{Board, GameResult};
 
 use super::search::{Search, SearchLimits, SearchResult};
 
@@ -59,7 +59,7 @@ impl<B: Board> ABSolver<B> {
 }
 
 impl<B: Board> Search<B> for ABSolver<B> {
-    fn search(&mut self, board: &B, limits: SearchLimits) -> SearchResult<B> {
+    fn search(&mut self, board: &B, _limits: SearchLimits) -> SearchResult<B> {
         self.nodes = 0;
         self.root_best_move = None;
         let mut tmp_board = board.clone();

@@ -1,10 +1,8 @@
-mod board;
 mod games;
 mod search;
 mod util;
 
-use board::Board;
-use games::tictactoe::{TicTacToeBoard, TicTacToeMove, TicTacToeSquare};
+use games::{board::Board, tictactoe::TicTacToeBoard};
 use search::{
     ab_solver::ABSolver,
     search::{Search, SearchLimits},
