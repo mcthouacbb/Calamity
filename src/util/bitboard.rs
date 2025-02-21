@@ -118,6 +118,14 @@ impl<const WIDTH: u8, const HEIGHT: u8> Bitboard<WIDTH, HEIGHT> {
         self.any() && !self.multiple()
     }
 
+    pub fn set(&mut self, sq: Square<WIDTH, HEIGHT>) {
+        self.0 |= 1 << sq.value();
+    }
+
+    pub fn unset(&mut self, sq: Square<WIDTH, HEIGHT>) {
+        self.0 &= !(1 << sq.value());
+    }
+
     pub const fn has(self, sq: Square<WIDTH, HEIGHT>) -> bool {
         return ((self.value() >> sq.value()) & 1u64) > 0;
     }
