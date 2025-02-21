@@ -3,9 +3,10 @@ use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
 
-use crate::util::{parse_fen_pieces, Square};
-
-use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
+use crate::{
+    games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
+    util::{parse_fen_pieces, Bitboard, Square},
+};
 
 pub type TicTacToeSquare = Square<3, 3>;
 
