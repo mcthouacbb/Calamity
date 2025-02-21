@@ -15,13 +15,13 @@ pub type HexapawnSquare = Square<3, 3>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct HexapawnMove {
     from: HexapawnSquare,
-    to: HexapawnSquare
+    to: HexapawnSquare,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum HexapawnColor {
     White,
-    Black
+    Black,
 }
 
 impl HexapawnColor {
@@ -64,7 +64,9 @@ impl CopyMakeBoard for HexapawnState {
         }
 
         let result = parse_fen_pieces(
-            |sq: i32, piece: HexapawnColor| board.pawns[piece as usize].set(Square::from_raw(sq as u16)),
+            |sq: i32, piece: HexapawnColor| {
+                board.pawns[piece as usize].set(Square::from_raw(sq as u16))
+            },
             parts[0],
             3,
             3,
@@ -93,7 +95,7 @@ impl CopyMakeBoard for HexapawnState {
             return GameResult::LOSS;
         }
 
-        let opp_back_rank: Bitboard<3, 3>= if self.stm == HexapawnColor::White {
+        let opp_back_rank: Bitboard<3, 3> = if self.stm == HexapawnColor::White {
             Bitboard::RANK_0
         } else {
             Bitboard::LAST_RANK
@@ -121,26 +123,43 @@ impl CopyMakeBoard for HexapawnState {
         let our_pawns = self.pawns[self.stm as usize];
         let their_pawns = self.pawns[self.stm.flip() as usize];
         let mut moves = ArrayVec::new();
-        let push_offset = if self.stm == HexapawnColor::White { 3 } else { -3 };
+        let push_offset = if self.stm == HexapawnColor::White {
+            3
+        } else {
+            -3
+        };
 
-        let mut pushes = if self.stm == HexapawnColor::White { our_pawns.north() } else { our_pawns.south() };
+        let mut pushes = if self.stm == HexapawnColor::White {
+            our_pawns.north()
+        } else {
+            our_pawns.south()
+        };
         let mut west_caps = pushes.west() & their_pawns;
         let mut east_caps = pushes.east() & their_pawns;
         pushes &= !(our_pawns | their_pawns);
 
         while pushes.any() {
             let to_sq = pushes.poplsb();
-            moves.push(HexapawnMove { from: to_sq - push_offset, to: to_sq });
+            moves.push(HexapawnMove {
+                from: to_sq - push_offset,
+                to: to_sq,
+            });
         }
 
         while west_caps.any() {
             let to_sq = west_caps.poplsb();
-            moves.push(HexapawnMove { from: to_sq - push_offset + 1, to: to_sq });
+            moves.push(HexapawnMove {
+                from: to_sq - push_offset + 1,
+                to: to_sq,
+            });
         }
 
         while east_caps.any() {
             let to_sq = east_caps.poplsb();
-            moves.push(HexapawnMove { from: to_sq - push_offset - 1, to: to_sq });
+            moves.push(HexapawnMove {
+                from: to_sq - push_offset - 1,
+                to: to_sq,
+            });
         }
 
         moves
@@ -148,7 +167,8 @@ impl CopyMakeBoard for HexapawnState {
 
     fn make_move(&mut self, mv: Self::Move) -> bool {
         self.pawns[self.stm.flip() as usize].unset(mv.to);
-        self.pawns[self.stm as usize] ^= Bitboard::from_square(mv.from) | Bitboard::from_square(mv.to);
+        self.pawns[self.stm as usize] ^=
+            Bitboard::from_square(mv.from) | Bitboard::from_square(mv.to);
         self.stm = self.stm.flip();
         true
     }
