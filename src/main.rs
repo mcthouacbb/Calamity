@@ -2,7 +2,7 @@ mod games;
 mod search;
 mod util;
 
-use games::{board::Board, tictactoe::TicTacToeBoard};
+use games::{board::Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard};
 use search::{
     ab_solver::ABSolver,
     search::{Search, SearchLimits},
@@ -13,6 +13,13 @@ fn main() {
     println!("{}", board);
 
     let mut solver = ABSolver::<TicTacToeBoard>::new();
+    let result = solver.search(&board, SearchLimits::default());
+    println!("{:?}", result);
+
+    let board = HexapawnBoard::startpos();
+    println!("{}", board);
+
+    let mut solver = ABSolver::<HexapawnBoard>::new();
     let result = solver.search(&board, SearchLimits::default());
     println!("{:?}", result);
 }
