@@ -16,7 +16,6 @@ fn main() {
     let nodes = perft::<true, HexapawnBoard>(&mut HexapawnBoard::startpos(), 100);
     println!("Nodes: {}", nodes);
 
-
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);
 
