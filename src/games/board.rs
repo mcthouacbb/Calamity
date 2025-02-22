@@ -1,6 +1,7 @@
 use core::fmt;
+use std::fmt::Debug;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum GameResult {
     NONE,
     WIN,
@@ -9,7 +10,7 @@ pub enum GameResult {
 }
 
 pub trait Board: Sized + Clone {
-    type Move: Copy + Clone + PartialEq + Eq;
+    type Move: Debug + Copy + Clone + PartialEq + Eq;
     type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
     type PieceType: Copy + Clone;
     type Color: Copy + Clone;
@@ -29,7 +30,7 @@ pub trait Board: Sized + Clone {
 }
 
 pub trait CopyMakeBoard: Sized + Clone {
-    type Move: Copy + Clone + PartialEq + Eq;
+    type Move: Debug + Copy + Clone + PartialEq + Eq;
     type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
     type PieceType: Copy + Clone;
     type Color: Copy + Clone;

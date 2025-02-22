@@ -4,11 +4,9 @@ use std::collections::HashMap;
 use arrayvec::ArrayVec;
 
 use crate::{
-    games::board::{Board, GameResult},
+    games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
     util::{parse_fen_pieces, Bitboard, Square},
 };
-
-use super::board::{CopyMakeBoard, CopyMakeWrapper};
 
 pub type HexapawnSquare = Square<3, 3>;
 
