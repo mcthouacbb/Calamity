@@ -11,8 +11,6 @@ use search::{
     search::{Search, SearchLimits},
 };
 
-use perft::run_perft_suite_file;
-
 fn main() {
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);
