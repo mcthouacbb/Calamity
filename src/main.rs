@@ -1,25 +1,26 @@
 mod games;
+mod perft;
 mod search;
 mod util;
 
-use games::{board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard};
+use std::fs::File;
+use std::io::prelude::*;
+
+use games::{
+    board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
+};
 use search::{
     ab_solver::ABSolver,
-    perft::perft,
     search::{Search, SearchLimits},
 };
 
+use perft::run_perft_suite;
+
 fn main() {
-    /*let nodes = perft::<true, TicTacToeBoard>(&mut TicTacToeBoard::startpos(), 100);
-    println!("Nodes: {}", nodes);
-
-    let nodes = perft::<true, HexapawnBoard>(&mut HexapawnBoard::startpos(), 100);
-    println!("Nodes: {}", nodes);*/
-
-    // let mut board = Connect4Board::startpos();
-    let mut board = Connect4Board::from_fen("7/7/4r2/r3y1y/yry1y1r/ryr1y1r r").unwrap();
-    let nodes = perft::<true, Connect4Board>(&mut board, 9);
-    println!("Nodes: {}", nodes);
+    let mut file = File::open("res/c4_perft.txt").unwrap();
+    let mut c4_tests = String::new();
+    let _ = file.read_to_string(&mut c4_tests);
+    run_perft_suite::<Connect4Board>(&c4_tests);
 
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);

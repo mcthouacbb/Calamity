@@ -80,7 +80,7 @@ impl CopyMakeBoard for Connect4State {
     fn from_fen(fen: &str) -> Option<Self> {
         let mut board = Self {
             pieces: [Bitboard::NONE; 2],
-            stm: Connect4Color::Red
+            stm: Connect4Color::Red,
         };
 
         let parts: Vec<&str> = fen.split_whitespace().collect();
@@ -182,4 +182,3 @@ impl fmt::Display for Connect4State {
 }
 
 pub type Connect4Board = CopyMakeWrapper<Connect4State>;
-
