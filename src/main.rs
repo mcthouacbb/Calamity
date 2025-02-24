@@ -1,20 +1,20 @@
 mod games;
+mod perft;
 mod search;
 mod util;
 
-use games::{board::Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard};
+use games::{
+    board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
+};
 use search::{
     ab_solver::ABSolver,
-    perft::perft,
     search::{Search, SearchLimits},
 };
 
-fn main() {
-    let nodes = perft::<true, TicTacToeBoard>(&mut TicTacToeBoard::startpos(), 100);
-    println!("Nodes: {}", nodes);
+use perft::run_perft_suite_file;
 
-    let nodes = perft::<true, HexapawnBoard>(&mut HexapawnBoard::startpos(), 100);
-    println!("Nodes: {}", nodes);
+fn main() {
+    run_perft_suite_file::<Connect4Board>("res/c4_perft.txt");
 
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);

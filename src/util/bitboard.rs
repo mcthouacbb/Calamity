@@ -89,7 +89,7 @@ impl<const WIDTH: u8, const HEIGHT: u8> Bitboard<WIDTH, HEIGHT> {
     }
 
     pub const fn msb(self) -> Square<WIDTH, HEIGHT> {
-        Square::from_raw(self.value().leading_zeros() as u16)
+        Square::from_raw((63 - self.value().leading_zeros()) as u16)
     }
 
     pub const fn popcount(self) -> u32 {
