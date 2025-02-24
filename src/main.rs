@@ -14,8 +14,6 @@ use search::{
 use perft::run_perft_suite_file;
 
 fn main() {
-    run_perft_suite_file::<Connect4Board>("res/c4_perft.txt");
-
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);
 
