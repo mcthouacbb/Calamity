@@ -3,9 +3,6 @@ mod perft;
 mod search;
 mod util;
 
-use std::fs::File;
-use std::io::prelude::*;
-
 use games::{
     board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
 };
@@ -14,13 +11,10 @@ use search::{
     search::{Search, SearchLimits},
 };
 
-use perft::run_perft_suite;
+use perft::run_perft_suite_file;
 
 fn main() {
-    let mut file = File::open("res/c4_perft.txt").unwrap();
-    let mut c4_tests = String::new();
-    let _ = file.read_to_string(&mut c4_tests);
-    run_perft_suite::<Connect4Board>(&c4_tests);
+    run_perft_suite_file::<Connect4Board>("res/c4_perft.txt");
 
     let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);

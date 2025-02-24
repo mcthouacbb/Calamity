@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::prelude::*;
+
 use crate::games::board::{Board, GameResult};
 
 pub fn perft<const SPLIT: bool, B: Board>(board: &mut B, depth: u32) -> u64 {
@@ -30,6 +33,13 @@ fn perft_impl<B: Board>(board: &mut B, depth: u32) -> u64 {
         board.unmake_move();
     }
     nodes
+}
+
+pub fn run_perft_suite_file<B: Board>(filename: &str) {
+    let mut file = File::open(filename).unwrap();
+    let mut tests = String::new();
+    let _ = file.read_to_string(&mut tests);
+    run_perft_suite::<B>(&tests);
 }
 
 pub fn run_perft_suite<B: Board>(tests: &str) {
