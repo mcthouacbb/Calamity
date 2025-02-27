@@ -12,7 +12,6 @@ pub enum GameResult {
 pub trait Board: Sized + Clone {
     type Move: Debug + Copy + Clone + PartialEq + Eq;
     type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
-    type PieceType: Copy + Clone;
     type Color: Copy + Clone;
     type Piece: Copy + Clone;
     type MoveList: IntoIterator<Item = Self::Move>;
@@ -32,7 +31,6 @@ pub trait Board: Sized + Clone {
 pub trait CopyMakeBoard: Sized + Clone {
     type Move: Debug + Copy + Clone + PartialEq + Eq;
     type Square: Copy + Clone + PartialEq + Eq + PartialEq + Ord;
-    type PieceType: Copy + Clone;
     type Color: Copy + Clone;
     type Piece: Copy + Clone;
     type MoveList: IntoIterator<Item = Self::Move>;
@@ -75,7 +73,6 @@ where
 {
     type Move = T::Move;
     type Square = T::Square;
-    type PieceType = T::PieceType;
     type Color = T::Color;
     type Piece = T::Piece;
     type MoveList = T::MoveList;
