@@ -49,8 +49,6 @@ pub struct TicTacToeState {
 
 impl CopyMakeBoard for TicTacToeState {
     type Color = TicTacToeColor;
-    // only one type of piece
-    type PieceType = ();
     type Piece = TicTacToeColor;
     type Square = TicTacToeSquare;
     type Move = TicTacToeMove;

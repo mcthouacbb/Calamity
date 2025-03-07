@@ -122,6 +122,10 @@ impl<const WIDTH: u8, const HEIGHT: u8> Bitboard<WIDTH, HEIGHT> {
         self.0 |= 1 << sq.value();
     }
 
+    pub fn toggle(&mut self, sq: Square<WIDTH, HEIGHT>) {
+        self.0 ^= 1 << sq.value();
+    }
+
     pub fn unset(&mut self, sq: Square<WIDTH, HEIGHT>) {
         self.0 &= !(1 << sq.value());
     }

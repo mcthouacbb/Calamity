@@ -70,8 +70,6 @@ impl Connect4State {
 
 impl CopyMakeBoard for Connect4State {
     type Color = Connect4Color;
-    // only one type of piece
-    type PieceType = ();
     type Piece = Connect4Color;
     type Square = Connect4Square;
     type Move = Connect4Move;

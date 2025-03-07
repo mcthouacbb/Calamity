@@ -39,8 +39,6 @@ pub struct HexapawnState {
 
 impl CopyMakeBoard for HexapawnState {
     type Color = HexapawnColor;
-    // only one type of piece
-    type PieceType = ();
     type Piece = HexapawnColor;
     type Square = HexapawnSquare;
     type Move = HexapawnMove;
