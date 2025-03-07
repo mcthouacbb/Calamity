@@ -65,8 +65,8 @@ pub enum AtaxxColor {
 impl AtaxxColor {
     pub fn flip(self) -> Self {
         match self {
-            Self::White => Self::White,
-            Self::Black => Self::Black,
+            Self::Black => Self::White,
+            Self::White => Self::Black,
         }
     }
 }
@@ -133,8 +133,12 @@ impl AtaxxState {
         self.pieces[c as usize]
     }
 
+    pub fn pieces_mut(&mut self, c: AtaxxColor) -> &mut Bitboard<7, 7> {
+        &mut self.pieces[c as usize]
+    }
+
     pub fn occ(&self) -> Bitboard<7, 7> {
-        self.pieces[0] | self.pieces[1]
+        self.pieces[0] | self.pieces[1] | self.blockers
     }
 }
 
@@ -162,11 +166,11 @@ impl CopyMakeBoard for AtaxxState {
             |sq: i32, piece: AtaxxPiece| {
                 if piece == AtaxxPiece::Black {
                     board
-                        .pieces(AtaxxColor::Black)
+                        .pieces_mut(AtaxxColor::Black)
                         .set(Square::from_raw(sq as u16));
                 } else if piece == AtaxxPiece::White {
                     board
-                        .pieces(AtaxxColor::White)
+                        .pieces_mut(AtaxxColor::White)
                         .set(Square::from_raw(sq as u16));
                 } else if piece == AtaxxPiece::Blocker {
                     board.blockers.set(Square::from_raw(sq as u16));
@@ -193,19 +197,22 @@ impl CopyMakeBoard for AtaxxState {
         }
 
         if parts[1] == "X" || parts[1] == "x" || parts[1] == "B" || parts[1] == "b" {
-            board.stm = AtaxxColor::White;
-        } else if parts[1] == "O" || parts[1] == "o" || parts[1] == "W" || parts[1] == "w" {
             board.stm = AtaxxColor::Black;
+        } else if parts[1] == "O" || parts[1] == "o" || parts[1] == "W" || parts[1] == "w" {
+            board.stm = AtaxxColor::White;
         } else {
             // invalid stm
             return None;
         }
 
+        let Ok(hmc) = parts[2].parse() else { return None };
+        board.half_move_clock = hmc;
+
         Some(board)
     }
 
     fn startpos() -> Self {
-        Self::from_fen("7/7/7/7/7/7 r").unwrap()
+        Self::from_fen("x5o/7/7/7/7/7/o5x x 0 1").unwrap()
     }
 
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece> {
@@ -232,7 +239,7 @@ impl CopyMakeBoard for AtaxxState {
         }
         let possible_moves = !self.occ() & single_moves(single_moves(self.occ()));
         if possible_moves.empty() {
-            let score = self.pieces(self.stm).popcount() - self.pieces(self.stm.flip()).popcount();
+            let score = self.pieces(self.stm).popcount() as i32 - self.pieces(self.stm.flip()).popcount() as i32;
             if score > 0 {
                 return GameResult::WIN;
             } else if score < 0 {
