@@ -5,7 +5,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{parse_fen_pieces, Bitboard, Square},
+    util::{Bitboard, Square, parse_fen_pieces},
 };
 
 pub type Connect4Square = Square<7, 6>;

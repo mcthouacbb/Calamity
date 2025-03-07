@@ -88,10 +88,9 @@ where
 
     fn from_fen(fen: &str) -> Option<Self> {
         let result = T::from_fen(fen);
-        if let Some(board) = result {
-            Some(Self { stack: vec![board] })
-        } else {
-            None
+        match result {
+            Some(board) => Some(Self { stack: vec![board] }),
+            _ => None,
         }
     }
 
