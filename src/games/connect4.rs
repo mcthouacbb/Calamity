@@ -13,6 +13,12 @@ pub type Connect4Square = Square<7, 6>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Connect4Move(Connect4Square);
 
+impl Connect4Move {
+    pub fn sq(&self) -> Connect4Square {
+        self.0
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Connect4Color {
     Red,

@@ -37,6 +37,8 @@ impl C4TTEntry {
     }
 }
 
+use arrayvec::ArrayVec;
+
 pub struct Connect4Solver {
     nodes: u64,
     root_best_move: Option<Connect4Move>,
@@ -52,6 +54,13 @@ impl Connect4Solver {
             root_best_move: None,
             tt: TT::new(32),
         }
+    }
+
+    fn order_moves(&mut self, _board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>) {
+        moves.sort_by_key(|mv: &Connect4Move| {
+            let file = mv.sq().file();
+            file.abs_diff(3) as i32
+        });
     }
 
     fn alpha_beta(
@@ -87,7 +96,8 @@ impl Connect4Solver {
             }
         }
 
-        let moves = board.gen_moves();
+        let mut moves = board.gen_moves();
+        self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
 
         let mut bound = TTBound::UPPER;
