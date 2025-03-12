@@ -7,7 +7,9 @@ use games::{
     board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
 };
 use search::{
-    ab_solver::ABSolver, c4_solver::{run_benchmark, C4Benchmark}, search::{Search, SearchLimits}
+    ab_solver::ABSolver,
+    c4_solver::{C4Benchmark, run_benchmark},
+    search::{Search, SearchLimits},
 };
 
 fn main() {

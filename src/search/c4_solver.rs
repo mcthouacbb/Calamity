@@ -1,6 +1,13 @@
-use std::{fs::File, io::Read, time::{Duration, Instant}};
+use std::{
+    fs::File,
+    io::Read,
+    time::{Duration, Instant},
+};
 
-use crate::games::{board::{Board, GameResult}, connect4::{Connect4Board, Connect4Move}};
+use crate::games::{
+    board::{Board, GameResult},
+    connect4::{Connect4Board, Connect4Move},
+};
 
 use super::search::{Search, SearchLimits, SearchResult};
 
@@ -19,7 +26,13 @@ impl Connect4Solver {
         }
     }
 
-    fn alpha_beta(&mut self, board: &mut Connect4Board, ply: i32, mut alpha: i32, beta: i32) -> i32 {
+    fn alpha_beta(
+        &mut self,
+        board: &mut Connect4Board,
+        ply: i32,
+        mut alpha: i32,
+        beta: i32,
+    ) -> i32 {
         match board.game_result() {
             GameResult::WIN => return Self::SCORE_WIN - ply,
             GameResult::DRAW => return 0,
@@ -58,7 +71,11 @@ impl Connect4Solver {
 }
 
 impl Search<Connect4Board> for Connect4Solver {
-    fn search(&mut self, board: &Connect4Board, _limits: SearchLimits) -> SearchResult<Connect4Board> {
+    fn search(
+        &mut self,
+        board: &Connect4Board,
+        _limits: SearchLimits,
+    ) -> SearchResult<Connect4Board> {
         self.nodes = 0;
         self.root_best_move = None;
         let mut tmp_board = board.clone();
@@ -84,7 +101,7 @@ pub enum C4Benchmark {
     MidMedium,
     BeginEasy,
     BeginMedium,
-    BeginHard
+    BeginHard,
 }
 
 pub fn run_benchmark(benchmark: C4Benchmark) {
@@ -94,7 +111,7 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
         C4Benchmark::MidMedium => "res/c4_midgame_medium.txt",
         C4Benchmark::BeginEasy => "res/c4_opening_easy.txt",
         C4Benchmark::BeginMedium => "res/c4_opening_medium.txt",
-        C4Benchmark::BeginHard => "res/c4_opening_hard.txt"
+        C4Benchmark::BeginHard => "res/c4_opening_hard.txt",
     };
 
     let mut file = File::open(filename).unwrap();
@@ -115,11 +132,14 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
         let limits = SearchLimits {
             max_nodes: None,
             max_depth: None,
-            max_time: None
+            max_time: None,
         };
         let result = solver.search(&board, limits);
         if result.score != expected_score {
-            println!("Failed: incorrect score {} fen: {} expected score: {}", result.score, fen, expected_score);
+            println!(
+                "Failed: incorrect score {} fen: {} expected score: {}",
+                result.score, fen, expected_score
+            );
         }
         total_nodes += result.nodes;
         total_time += result.time;
@@ -128,5 +148,10 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
         }
     }
     println!("Finished connect 4 benchmark {:?}", benchmark);
-    println!("Average time: {}\naverage nodes: {}\naverage nps: {}", total_time.as_secs_f64() / 1000.0, total_nodes / 1000, total_nodes as f64 / total_time.as_secs_f64());
+    println!(
+        "Average time: {}\naverage nodes: {}\naverage nps: {}",
+        total_time.as_secs_f64() / 1000.0,
+        total_nodes / 1000,
+        total_nodes as f64 / total_time.as_secs_f64()
+    );
 }
