@@ -59,8 +59,16 @@ impl Connect4Solver {
         board: &mut Connect4Board,
         ply: i32,
         mut alpha: i32,
-        beta: i32,
+        mut beta: i32,
     ) -> i32 {
+        // mate distance pruning, prune if it's impossible to change the search result
+        // even if we win in the current position 
+        alpha = alpha.max(-Self::SCORE_WIN + ply);
+        beta = beta.min(Self::SCORE_WIN - ply);
+        if alpha >= beta {
+            return alpha;
+        }
+
         match board.game_result() {
             GameResult::WIN => return Self::SCORE_WIN - ply,
             GameResult::DRAW => return 0,
