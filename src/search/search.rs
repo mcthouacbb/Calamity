@@ -20,4 +20,5 @@ pub struct SearchLimits {
 
 pub trait Search<B: Board> {
     fn search(&mut self, board: &B, limits: SearchLimits) -> SearchResult<B>;
+    fn clear(&mut self) {}
 }

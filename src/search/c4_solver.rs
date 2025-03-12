@@ -9,11 +9,38 @@ use crate::games::{
     connect4::{Connect4Board, Connect4Move},
 };
 
-use super::search::{Search, SearchLimits, SearchResult};
+use super::{
+    search::{Search, SearchLimits, SearchResult},
+    tt::{TT, TTBound, decisive_score_from_tt, decisive_score_to_tt},
+};
+
+#[derive(Default, Clone)]
+pub struct C4TTEntry {
+    score: i32,
+    bound: TTBound,
+}
+
+impl C4TTEntry {
+    fn adjust_from_tt(&mut self, ply: i32) {
+        // non zero scores are terminal
+        if self.score != 0 {
+            self.score = decisive_score_from_tt(self.score, ply);
+        }
+    }
+
+    fn to_tt(&self, ply: i32) -> Self {
+        let mut result = self.clone();
+        if result.score != 0 {
+            result.score = decisive_score_to_tt(self.score, ply);
+        }
+        result
+    }
+}
 
 pub struct Connect4Solver {
     nodes: u64,
     root_best_move: Option<Connect4Move>,
+    tt: TT<C4TTEntry>,
 }
 
 impl Connect4Solver {
@@ -23,6 +50,7 @@ impl Connect4Solver {
         Self {
             nodes: 0,
             root_best_move: None,
+            tt: TT::new(32),
         }
     }
 
@@ -39,8 +67,22 @@ impl Connect4Solver {
             GameResult::LOSS => return -Self::SCORE_WIN + ply,
             _ => {}
         }
+
+        if let Some(mut data) = self.tt.probe(board.curr_state().key()) {
+            data.adjust_from_tt(ply);
+
+            if data.bound == TTBound::EXACT
+                || (data.bound == TTBound::LOWER && data.score >= beta)
+                || (data.bound == TTBound::UPPER && data.score <= alpha)
+            {
+                return data.score;
+            }
+        }
+
         let moves = board.gen_moves();
         let mut best_score = -Self::SCORE_WIN;
+
+        let mut bound = TTBound::UPPER;
         for mv in moves {
             // no illegal moves in connect 4
             board.make_move(mv);
@@ -55,6 +97,7 @@ impl Connect4Solver {
             }
 
             if score > alpha {
+                bound = TTBound::EXACT;
                 alpha = score;
                 if ply == 0 {
                     self.root_best_move = Some(mv);
@@ -62,11 +105,25 @@ impl Connect4Solver {
             }
 
             if score >= beta {
+                bound = TTBound::LOWER;
                 break;
             }
         }
 
+        self.tt.store(
+            board.curr_state().key(),
+            C4TTEntry {
+                score: best_score,
+                bound: bound,
+            }
+            .to_tt(ply),
+        );
+
         best_score
+    }
+
+    pub fn clear(&mut self) {
+        self.tt.clear();
     }
 }
 
@@ -120,6 +177,7 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
 
     let mut total_nodes = 0;
     let mut total_time: Duration = Duration::ZERO;
+    let mut solver = Connect4Solver::new();
 
     println!("Running connect 4 benchmark {:?}", benchmark);
     for (it, line) in positions.lines().enumerate() {
@@ -128,7 +186,7 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
         let expected_score = parts.next().unwrap().parse::<i32>().unwrap();
 
         let board = Connect4Board::from_fen(fen).unwrap();
-        let mut solver = Connect4Solver::new();
+        solver.clear();
         let limits = SearchLimits {
             max_nodes: None,
             max_depth: None,

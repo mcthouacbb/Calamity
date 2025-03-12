@@ -5,7 +5,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{Bitboard, Square, parse_fen_pieces},
+    util::{Bitboard, Square, hash_combine, murmur_hash3, parse_fen_pieces},
 };
 
 pub type Connect4Square = Square<7, 6>;
@@ -41,6 +41,14 @@ impl Connect4State {
 
     pub fn occ(&self) -> Bitboard<7, 6> {
         self.pieces[0] | self.pieces[1]
+    }
+
+    // a perfect hash is possible but I'm too lazy to do that. This should be good enough
+    pub fn key(&self) -> u64 {
+        hash_combine(
+            murmur_hash3(self.pieces[0].value()),
+            murmur_hash3(self.pieces[1].value()),
+        )
     }
 
     fn is_loss(&self) -> bool {
