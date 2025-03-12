@@ -7,12 +7,11 @@ use games::{
     board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
 };
 use search::{
-    ab_solver::ABSolver,
-    search::{Search, SearchLimits},
+    ab_solver::ABSolver, c4_solver::{run_benchmark, C4Benchmark}, search::{Search, SearchLimits}
 };
 
 fn main() {
-    let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
+    /*let board = TicTacToeBoard::from_fen("3/O2/X2 X").unwrap();
     println!("{}", board);
 
     let mut solver = ABSolver::<TicTacToeBoard>::new();
@@ -24,5 +23,11 @@ fn main() {
 
     let mut solver = ABSolver::<HexapawnBoard>::new();
     let result = solver.search(&board, SearchLimits::default());
-    println!("{:?}", result);
+    println!("{:?}", result);*/
+    run_benchmark(C4Benchmark::EndEasy);
+    run_benchmark(C4Benchmark::MidEasy);
+    run_benchmark(C4Benchmark::MidMedium);
+    run_benchmark(C4Benchmark::BeginEasy);
+    run_benchmark(C4Benchmark::BeginMedium);
+    run_benchmark(C4Benchmark::BeginHard);
 }
