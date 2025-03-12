@@ -5,7 +5,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{parse_fen_pieces, Bitboard, Square},
+    util::{Bitboard, Square, parse_fen_pieces},
 };
 
 pub type AtaxxSquare = Square<7, 7>;
@@ -205,7 +205,9 @@ impl CopyMakeBoard for AtaxxState {
             return None;
         }
 
-        let Ok(hmc) = parts[2].parse() else { return None };
+        let Ok(hmc) = parts[2].parse() else {
+            return None;
+        };
         board.half_move_clock = hmc;
 
         Some(board)
@@ -239,7 +241,8 @@ impl CopyMakeBoard for AtaxxState {
         }
         let possible_moves = !self.occ() & single_moves(single_moves(self.occ()));
         if possible_moves.empty() {
-            let score = self.pieces(self.stm).popcount() as i32 - self.pieces(self.stm.flip()).popcount() as i32;
+            let score = self.pieces(self.stm).popcount() as i32
+                - self.pieces(self.stm.flip()).popcount() as i32;
             if score > 0 {
                 return GameResult::WIN;
             } else if score < 0 {

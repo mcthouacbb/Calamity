@@ -4,7 +4,7 @@ mod search;
 mod util;
 
 use games::{
-    board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard
+    board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
 };
 use search::{
     ab_solver::ABSolver,
