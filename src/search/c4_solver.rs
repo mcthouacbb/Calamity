@@ -43,6 +43,7 @@ pub struct Connect4Solver {
     nodes: u64,
     root_best_move: Option<Connect4Move>,
     tt: TT<C4TTEntry>,
+    killers: [Option<Connect4Move>; 100],
 }
 
 impl Connect4Solver {
@@ -53,11 +54,15 @@ impl Connect4Solver {
             nodes: 0,
             root_best_move: None,
             tt: TT::new(32),
+            killers: [None; 100],
         }
     }
 
-    fn order_moves(&mut self, _board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>) {
+    fn order_moves(&mut self, _board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>, ply: i32) {
         moves.sort_by_key(|mv: &Connect4Move| {
+            if Some(*mv) == self.killers[ply as usize] {
+                return 0;
+            }
             let file = mv.sq().file();
             file.abs_diff(3) as i32
         });
@@ -97,7 +102,7 @@ impl Connect4Solver {
         }
 
         let mut moves = board.gen_moves();
-        self.order_moves(board, &mut moves);
+        self.order_moves(board, &mut moves, ply);
         let mut best_score = -Self::SCORE_WIN;
         let mut moves_played = 0;
 
@@ -131,6 +136,7 @@ impl Connect4Solver {
             }
 
             if score >= beta {
+                self.killers[ply as usize] = Some(mv);
                 bound = TTBound::LOWER;
                 break;
             }
@@ -150,6 +156,7 @@ impl Connect4Solver {
 
     pub fn clear(&mut self) {
         self.tt.clear();
+        self.killers.fill(None);
     }
 }
 
