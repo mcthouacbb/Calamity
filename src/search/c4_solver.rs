@@ -63,7 +63,7 @@ impl Connect4Solver {
         });
     }
 
-    fn alpha_beta(
+    fn alpha_beta<const PV: bool>(
         &mut self,
         board: &mut Connect4Board,
         ply: i32,
@@ -71,7 +71,7 @@ impl Connect4Solver {
         mut beta: i32,
     ) -> i32 {
         // mate distance pruning, prune if it's impossible to change the search result
-        // even if we win in the current position 
+        // even if we win in the current position
         alpha = alpha.max(-Self::SCORE_WIN + ply);
         beta = beta.min(Self::SCORE_WIN - ply);
         if alpha >= beta {
@@ -99,14 +99,22 @@ impl Connect4Solver {
         let mut moves = board.gen_moves();
         self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
+        let mut moves_played = 0;
 
         let mut bound = TTBound::UPPER;
         for mv in moves {
             // no illegal moves in connect 4
             board.make_move(mv);
             self.nodes += 1;
+            moves_played += 1;
 
-            let score = -self.alpha_beta(board, ply + 1, -beta, -alpha);
+            let mut score = 0;
+            if !PV || moves_played > 1 {
+                score = -self.alpha_beta::<false>(board, ply + 1, -alpha - 1, -alpha);
+            }
+            if PV && (moves_played == 1 || score > alpha) {
+                score = -self.alpha_beta::<true>(board, ply + 1, -beta, -alpha);
+            }
 
             board.unmake_move();
 
@@ -156,7 +164,7 @@ impl Search<Connect4Board> for Connect4Solver {
         let mut tmp_board = board.clone();
 
         let start_time = Instant::now();
-        let score = self.alpha_beta(&mut tmp_board, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
+        let score = self.alpha_beta::<true>(&mut tmp_board, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
         let end_time = Instant::now();
 
         SearchResult {
