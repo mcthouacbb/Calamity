@@ -233,7 +233,7 @@ pub fn run_benchmark(benchmark: C4Benchmark) {
     }
     println!("Finished connect 4 benchmark {:?}", benchmark);
     println!(
-        "Average time: {}\naverage nodes: {}\naverage nps: {}",
+        "Average time: {}\nAverage nodes: {}\nAverage nps: {}",
         total_time.as_secs_f64() / 1000.0,
         total_nodes / 1000,
         total_nodes as f64 / total_time.as_secs_f64()
