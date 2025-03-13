@@ -61,7 +61,7 @@ impl Connect4Solver {
     fn order_moves(&mut self, _board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>, ply: i32) {
         moves.sort_by_key(|mv: &Connect4Move| {
             if Some(*mv) == self.killers[ply as usize] {
-                return 0;
+                return -1;
             }
             let file = mv.sq().file();
             file.abs_diff(3) as i32
