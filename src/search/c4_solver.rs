@@ -70,7 +70,9 @@ impl Connect4Solver {
 
         let history_score =
             self.history[board.curr_state().stm() as usize][mv.sq().value() as usize];
-        base_score + history_score
+
+        let threats_after = board.curr_state().our_threats_after(mv);
+        base_score + history_score + 20 * threats_after.popcount() as i32
     }
 
     fn order_moves(

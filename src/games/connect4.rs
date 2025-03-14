@@ -77,6 +77,12 @@ impl Connect4State {
         Self::compute_threats(self.pieces(self.stm().flip()), self.occ())
     }
 
+    pub fn our_threats_after(&self, mv: Connect4Move) -> Connect4Bitboard {
+        let mut pieces = self.pieces(self.stm());
+        pieces.set(mv.sq());
+        Self::compute_threats(pieces, self.occ())
+    }
+
     fn compute_threats(pieces: Connect4Bitboard, occ: Connect4Bitboard) -> Connect4Bitboard {
         let pieces = pieces.value();
         let vertical = (pieces << 1) & (pieces << 2) & (pieces << 3);
