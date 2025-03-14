@@ -69,10 +69,12 @@ impl Connect4Solver {
 
         let threats_after = board.curr_state().our_threats_after(mv);
         let moves_after = board.curr_state().move_locations_after(mv);
+        let double_threat = (threats_after & moves_after).multiple() || (threats_after & threats_after.south() & moves_after).any();
         base_score
             + history_score
             + 20 * threats_after.popcount() as i32
             + 30 * (threats_after & moves_after).popcount() as i32
+            + 100 * double_threat as i32
     }
 
     fn order_moves(
