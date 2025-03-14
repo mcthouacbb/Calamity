@@ -108,6 +108,12 @@ impl Connect4Solver {
             return -Self::SCORE_WIN + (ply + 2);
         }
 
+        let non_losing_moves = if (opp_threats & move_locations).any() {
+            opp_threats & move_locations
+        } else {
+            move_locations & !opp_threats.south()
+        };
+
         match board.game_result() {
             GameResult::WIN => return Self::SCORE_WIN - ply,
             GameResult::DRAW => return 0,
@@ -135,6 +141,9 @@ impl Connect4Solver {
         for (i, mv) in moves.iter().enumerate() {
             // hack so I don't have to deref every time
             let mv = *mv;
+            if !non_losing_moves.has(mv.sq()) {
+                continue;
+            }
             // no illegal moves in connect 4
             board.make_move(mv);
             self.nodes += 1;
