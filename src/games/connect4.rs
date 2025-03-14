@@ -64,6 +64,14 @@ impl Connect4State {
         self.above_pieces() & Connect4Bitboard::VALID
     }
 
+    pub fn move_locations_after(&self, mv: Connect4Move) -> Connect4Bitboard {
+        let mut occ = self.occ();
+        occ.set(mv.sq());
+        let above_pieces =
+            Connect4Bitboard::from_raw(occ.value() + Connect4Bitboard::row(0).value());
+        above_pieces & Connect4Bitboard::VALID
+    }
+
     // a perfect hash is possible but I'm too lazy to do that. This should be good enough
     pub fn key(&self) -> u64 {
         murmur_hash3((self.above_pieces() | self.pieces(Connect4Color::Red)).value())
