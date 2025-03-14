@@ -61,7 +61,8 @@ impl Connect4Solver {
     fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move, ply: i32) -> i32 {
         let base_score = {
             let col = mv.sq().column();
-            -(col.abs_diff(3) as i32)
+            let row = mv.sq().row();
+            -(col.abs_diff(3) as i32) + 2 * (row % 2 == 1) as i32
         };
 
         let history_score =
@@ -69,7 +70,8 @@ impl Connect4Solver {
 
         let threats_after = board.curr_state().our_threats_after(mv);
         let moves_after = board.curr_state().move_locations_after(mv);
-        let double_threat = (threats_after & moves_after).multiple() || (threats_after & threats_after.south() & moves_after).any();
+        let double_threat = (threats_after & moves_after).multiple()
+            || (threats_after & threats_after.south() & moves_after).any();
         base_score
             + history_score
             + 20 * threats_after.popcount() as i32
