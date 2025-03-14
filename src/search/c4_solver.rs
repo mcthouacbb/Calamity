@@ -44,6 +44,7 @@ pub struct Connect4Solver {
     root_best_move: Option<Connect4Move>,
     tt: TT<C4TTEntry>,
     killers: [Option<Connect4Move>; 100],
+    history: [[i32; 42]; 2],
 }
 
 impl Connect4Solver {
@@ -55,22 +56,30 @@ impl Connect4Solver {
             root_best_move: None,
             tt: TT::new(32),
             killers: [None; 100],
+            history: [[0; 42]; 2],
         }
+    }
+
+    fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move, ply: i32) -> i32 {
+        let base_score = if Some(mv) == self.killers[ply as usize] {
+            1
+        } else {
+            let file = mv.sq().file();
+            -(file.abs_diff(3) as i32)
+        };
+
+        let history_score =
+            self.history[board.curr_state().stm() as usize][mv.sq().value() as usize];
+        base_score + history_score
     }
 
     fn order_moves(
         &mut self,
-        _board: &mut Connect4Board,
+        board: &mut Connect4Board,
         moves: &mut ArrayVec<Connect4Move, 7>,
         ply: i32,
     ) {
-        moves.sort_by_key(|mv: &Connect4Move| {
-            if Some(*mv) == self.killers[ply as usize] {
-                return -1;
-            }
-            let file = mv.sq().file();
-            file.abs_diff(3) as i32
-        });
+        moves.sort_by_key(|mv: &Connect4Move| -self.score_move(board, *mv, ply));
     }
 
     fn alpha_beta<const PV: bool>(
@@ -112,7 +121,9 @@ impl Connect4Solver {
         let mut moves_played = 0;
 
         let mut bound = TTBound::UPPER;
-        for mv in moves {
+        for (i, mv) in moves.iter().enumerate() {
+            // hack so I don't have to deref every time
+            let mv = *mv;
             // no illegal moves in connect 4
             board.make_move(mv);
             self.nodes += 1;
@@ -141,6 +152,13 @@ impl Connect4Solver {
             }
 
             if score >= beta {
+                for j in 0..i {
+                    self.history[board.curr_state().stm() as usize]
+                        [moves[j].sq().value() as usize] -= 1;
+                }
+                self.history[board.curr_state().stm() as usize][mv.sq().value() as usize] +=
+                    i as i32;
+
                 self.killers[ply as usize] = Some(mv);
                 bound = TTBound::LOWER;
                 break;

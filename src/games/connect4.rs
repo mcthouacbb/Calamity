@@ -45,6 +45,10 @@ impl Connect4State {
         self.pieces[c as usize]
     }
 
+    pub fn stm(&self) -> Connect4Color {
+        self.stm
+    }
+
     pub fn occ(&self) -> Bitboard<7, 6> {
         self.pieces[0] | self.pieces[1]
     }
