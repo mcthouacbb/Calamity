@@ -99,7 +99,7 @@ impl Connect4Solver {
 
         // win on the next move
         if (board.curr_state().threats() & board.curr_state().move_locations()).any() {
-            return Self::SCORE_WIN - (ply + 1)
+            return Self::SCORE_WIN - (ply + 1);
         }
 
         match board.game_result() {
