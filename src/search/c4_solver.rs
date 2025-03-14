@@ -43,7 +43,6 @@ pub struct Connect4Solver {
     nodes: u64,
     root_best_move: Option<Connect4Move>,
     tt: TT<C4TTEntry>,
-    killers: [Option<Connect4Move>; 100],
     history: [[i32; 49]; 2],
 }
 
@@ -55,15 +54,12 @@ impl Connect4Solver {
             nodes: 0,
             root_best_move: None,
             tt: TT::new(32),
-            killers: [None; 100],
             history: [[0; 49]; 2],
         }
     }
 
     fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move, ply: i32) -> i32 {
-        let base_score = if Some(mv) == self.killers[ply as usize] {
-            1
-        } else {
+        let base_score = {
             let col = mv.sq().column();
             -(col.abs_diff(3) as i32)
         };
@@ -183,7 +179,6 @@ impl Connect4Solver {
                 self.history[board.curr_state().stm() as usize][mv.sq().value() as usize] +=
                     i as i32;
 
-                self.killers[ply as usize] = Some(mv);
                 bound = TTBound::LOWER;
                 break;
             }
@@ -203,7 +198,7 @@ impl Connect4Solver {
 
     pub fn clear(&mut self) {
         self.tt.clear();
-        self.killers.fill(None);
+        self.history.fill([0; 49]);
     }
 }
 
