@@ -104,7 +104,9 @@ impl Connect4Solver {
         }
         // cannot stop the opponent from winning in 2 moves
         let opp_threats = board.curr_state().their_threats();
-        if (opp_threats & move_locations).multiple() || (opp_threats & opp_threats.south() & move_locations).any() {
+        if (opp_threats & move_locations).multiple()
+            || (opp_threats & opp_threats.south() & move_locations).any()
+        {
             return -Self::SCORE_WIN + (ply + 2);
         }
 

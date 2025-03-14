@@ -10,7 +10,7 @@ use square::Connect4Square;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{Square, hash_combine, murmur_hash3, parse_fen_pieces},
+    util::{Square, murmur_hash3, parse_fen_pieces},
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
