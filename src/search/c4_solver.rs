@@ -44,7 +44,7 @@ pub struct Connect4Solver {
     root_best_move: Option<Connect4Move>,
     tt: TT<C4TTEntry>,
     killers: [Option<Connect4Move>; 100],
-    history: [[i32; 42]; 2],
+    history: [[i32; 49]; 2],
 }
 
 impl Connect4Solver {
@@ -56,7 +56,7 @@ impl Connect4Solver {
             root_best_move: None,
             tt: TT::new(32),
             killers: [None; 100],
-            history: [[0; 42]; 2],
+            history: [[0; 49]; 2],
         }
     }
 
@@ -64,8 +64,8 @@ impl Connect4Solver {
         let base_score = if Some(mv) == self.killers[ply as usize] {
             1
         } else {
-            let file = mv.sq().file();
-            -(file.abs_diff(3) as i32)
+            let col = mv.sq().column();
+            -(col.abs_diff(3) as i32)
         };
 
         let history_score =
@@ -95,6 +95,11 @@ impl Connect4Solver {
         beta = beta.min(Self::SCORE_WIN - ply);
         if alpha >= beta {
             return alpha;
+        }
+
+        // win on the next move
+        if (board.curr_state().threats() & board.curr_state().move_locations()).any() {
+            return Self::SCORE_WIN - (ply + 1)
         }
 
         match board.game_result() {
