@@ -43,7 +43,6 @@ pub struct Connect4Solver {
     nodes: u64,
     root_best_move: Option<Connect4Move>,
     tt: TT<C4TTEntry>,
-    history: [[i32; 49]; 2],
 }
 
 impl Connect4Solver {
@@ -54,26 +53,19 @@ impl Connect4Solver {
             nodes: 0,
             root_best_move: None,
             tt: TT::new(32),
-            history: [[0; 49]; 2],
         }
     }
 
     fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move, ply: i32) -> i32 {
-        let base_score = {
-            let col = mv.sq().column();
-            let row = mv.sq().row();
-            -(col.abs_diff(3) as i32) + 2 * (row % 2 == 1) as i32
-        };
-
-        let history_score =
-            self.history[board.curr_state().stm() as usize][mv.sq().value() as usize];
+        let col = mv.sq().column();
+        let row = mv.sq().row();
+        let base_score = -(col.abs_diff(3) as i32) + 2 * (row % 2 == 1) as i32;
 
         let threats_after = board.curr_state().our_threats_after(mv);
         let moves_after = board.curr_state().move_locations_after(mv);
         let double_threat = (threats_after & moves_after).multiple()
             || (threats_after & threats_after.south() & moves_after).any();
         base_score
-            + history_score
             + 20 * threats_after.popcount() as i32
             + 30 * (threats_after & moves_after).popcount() as i32
             + 100 * double_threat as i32
@@ -180,13 +172,6 @@ impl Connect4Solver {
             }
 
             if score >= beta {
-                for j in 0..i {
-                    self.history[board.curr_state().stm() as usize]
-                        [moves[j].sq().value() as usize] -= 1;
-                }
-                self.history[board.curr_state().stm() as usize][mv.sq().value() as usize] +=
-                    i as i32;
-
                 bound = TTBound::LOWER;
                 break;
             }
@@ -206,7 +191,6 @@ impl Connect4Solver {
 
     pub fn clear(&mut self) {
         self.tt.clear();
-        self.history.fill([0; 49]);
     }
 }
 
