@@ -56,7 +56,7 @@ impl Connect4Solver {
         }
     }
 
-    fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move, ply: i32) -> i32 {
+    fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move) -> i32 {
         let col = mv.sq().column();
         let row = mv.sq().row();
         let base_score = -(col.abs_diff(3) as i32) + 2 * (row % 2 == 1) as i32;
@@ -71,13 +71,8 @@ impl Connect4Solver {
             + 100 * double_threat as i32
     }
 
-    fn order_moves(
-        &mut self,
-        board: &mut Connect4Board,
-        moves: &mut ArrayVec<Connect4Move, 7>,
-        ply: i32,
-    ) {
-        moves.sort_by_key(|mv: &Connect4Move| -self.score_move(board, *mv, ply));
+    fn order_moves(&mut self, board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>) {
+        moves.sort_by_key(|mv: &Connect4Move| -self.score_move(board, *mv));
     }
 
     fn alpha_beta<const PV: bool>(
@@ -133,13 +128,12 @@ impl Connect4Solver {
         }
 
         let mut moves = board.gen_moves();
-        self.order_moves(board, &mut moves, ply);
+        self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
         let mut moves_played = 0;
 
         let mut bound = TTBound::UPPER;
-        for (i, mv) in moves.iter().enumerate() {
-            // hack so I don't have to deref every time
+        for mv in moves.iter() {
             let mv = *mv;
             if !non_losing_moves.has(mv.sq()) {
                 continue;
