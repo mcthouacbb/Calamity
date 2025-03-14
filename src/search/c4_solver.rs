@@ -98,8 +98,14 @@ impl Connect4Solver {
         }
 
         // win on the next move
-        if (board.curr_state().threats() & board.curr_state().move_locations()).any() {
+        let move_locations = board.curr_state().move_locations();
+        if (board.curr_state().our_threats() & move_locations).any() {
             return Self::SCORE_WIN - (ply + 1);
+        }
+        // cannot stop the opponent from winning in 2 moves
+        let opp_threats = board.curr_state().their_threats();
+        if (opp_threats & move_locations).multiple() || (opp_threats & opp_threats.south() & move_locations).any() {
+            return -Self::SCORE_WIN + (ply + 2);
         }
 
         match board.game_result() {

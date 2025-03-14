@@ -69,8 +69,12 @@ impl Connect4State {
         murmur_hash3((self.above_pieces() | self.pieces(Connect4Color::Red)).value())
     }
 
-    pub fn threats(&self) -> Connect4Bitboard {
+    pub fn our_threats(&self) -> Connect4Bitboard {
         Self::compute_threats(self.pieces(self.stm()), self.occ())
+    }
+
+    pub fn their_threats(&self) -> Connect4Bitboard {
+        Self::compute_threats(self.pieces(self.stm().flip()), self.occ())
     }
 
     fn compute_threats(pieces: Connect4Bitboard, occ: Connect4Bitboard) -> Connect4Bitboard {
