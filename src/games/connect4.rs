@@ -1,17 +1,26 @@
+mod bitboard;
+mod square;
+
 use core::fmt;
 use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
+use bitboard::Connect4Bitboard;
+use square::Connect4Square;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{Bitboard, Square, parse_fen_pieces},
+    util::{Square, murmur_hash3, parse_fen_pieces},
 };
-
-pub type Connect4Square = Square<7, 6>;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Connect4Move(Connect4Square);
+
+impl Connect4Move {
+    pub fn sq(&self) -> Connect4Square {
+        self.0
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Connect4Color {
@@ -30,38 +39,106 @@ impl Connect4Color {
 
 #[derive(Debug, Clone)]
 pub struct Connect4State {
-    pieces: [Bitboard<7, 6>; 2],
+    pieces: [Connect4Bitboard; 2],
     stm: Connect4Color,
 }
 
 impl Connect4State {
-    pub fn pieces(&self, c: Connect4Color) -> Bitboard<7, 6> {
+    pub fn pieces(&self, c: Connect4Color) -> Connect4Bitboard {
         self.pieces[c as usize]
     }
 
-    pub fn occ(&self) -> Bitboard<7, 6> {
+    pub fn stm(&self) -> Connect4Color {
+        self.stm
+    }
+
+    pub fn occ(&self) -> Connect4Bitboard {
         self.pieces[0] | self.pieces[1]
     }
 
+    pub fn above_pieces(&self) -> Connect4Bitboard {
+        Connect4Bitboard::from_raw(self.occ().value() + Connect4Bitboard::row(0).value())
+    }
+
+    pub fn move_locations(&self) -> Connect4Bitboard {
+        self.above_pieces() & Connect4Bitboard::VALID
+    }
+
+    pub fn move_locations_after(&self, mv: Connect4Move) -> Connect4Bitboard {
+        let mut occ = self.occ();
+        occ.set(mv.sq());
+        let above_pieces =
+            Connect4Bitboard::from_raw(occ.value() + Connect4Bitboard::row(0).value());
+        above_pieces & Connect4Bitboard::VALID
+    }
+
+    // a perfect hash is possible but I'm too lazy to do that. This should be good enough
+    pub fn key(&self) -> u64 {
+        murmur_hash3((self.above_pieces() | self.pieces(Connect4Color::Red)).value())
+    }
+
+    pub fn our_threats(&self) -> Connect4Bitboard {
+        Self::compute_threats(self.pieces(self.stm()), self.occ())
+    }
+
+    pub fn their_threats(&self) -> Connect4Bitboard {
+        Self::compute_threats(self.pieces(self.stm().flip()), self.occ())
+    }
+
+    pub fn our_threats_after(&self, mv: Connect4Move) -> Connect4Bitboard {
+        let mut pieces = self.pieces(self.stm());
+        pieces.set(mv.sq());
+        Self::compute_threats(pieces, self.occ())
+    }
+
+    fn compute_threats(pieces: Connect4Bitboard, occ: Connect4Bitboard) -> Connect4Bitboard {
+        let pieces = pieces.value();
+        let vertical = (pieces << 1) & (pieces << 2) & (pieces << 3);
+
+        let mut tmp = (pieces << 7) & (pieces << 2 * 7);
+        let mut horizontal = tmp & (pieces << 3 * 7);
+        horizontal |= tmp & (pieces >> 7);
+        tmp = (pieces >> 7) & (pieces >> 2 * 7);
+        horizontal |= tmp & (pieces >> 3 * 7);
+        horizontal |= tmp & (pieces << 7);
+
+        tmp = (pieces << 6) & (pieces << 2 * 6);
+        let mut diag1 = tmp & (pieces << 3 * 6);
+        diag1 |= tmp & (pieces >> 6);
+        tmp = (pieces >> 6) & (pieces >> 2 * 6);
+        diag1 |= tmp & (pieces >> 3 * 6);
+        diag1 |= tmp & (pieces << 6);
+
+        tmp = (pieces << 8) & (pieces << 2 * 8);
+        let mut diag2 = tmp & (pieces << 3 * 8);
+        diag2 |= tmp & (pieces >> 8);
+        tmp = (pieces >> 8) & (pieces >> 2 * 8);
+        diag2 |= tmp & (pieces >> 3 * 8);
+        diag2 |= tmp & (pieces << 8);
+
+        let result = (vertical | horizontal | diag1 | diag2) & Connect4Bitboard::VALID.value();
+        Connect4Bitboard::from_raw(result) & !occ
+    }
+
     fn is_loss(&self) -> bool {
-        let pieces = self.pieces(self.stm.flip());
-        let m = pieces & pieces.west();
-        if (m & m.west().west()).any() {
+        let pieces = self.pieces(self.stm.flip()).value();
+        let m = pieces & (pieces >> 7);
+        if (m & (m >> 14)) != 0 {
             return true;
         }
 
-        let m = pieces & pieces.south();
-        if (m & m.south().south()).any() {
+        let m = pieces & (pieces >> 1);
+        if (m & (m >> 2)) != 0 {
             return true;
         }
 
-        let m = pieces & pieces.south().west();
-        if (m & m.south().south().west().west()).any() {
+        let m = pieces & (pieces >> 6);
+        if (m & (m >> 12)) != 0 {
             return true;
         }
 
-        let m = pieces & pieces.south().east();
-        if (m & m.south().south().east().east()).any() {
+        let m = pieces & (pieces >> 8);
+        if (m & (m >> 16)) != 0 {
             return true;
         }
         false
@@ -77,7 +154,7 @@ impl CopyMakeBoard for Connect4State {
 
     fn from_fen(fen: &str) -> Option<Self> {
         let mut board = Self {
-            pieces: [Bitboard::NONE; 2],
+            pieces: [Connect4Bitboard::NONE; 2],
             stm: Connect4Color::Red,
         };
 
@@ -88,7 +165,11 @@ impl CopyMakeBoard for Connect4State {
 
         let result = parse_fen_pieces(
             |sq: i32, piece: Connect4Color| {
-                board.pieces[piece as usize].set(Square::from_raw(sq as u16))
+                let conventional_sq = Square::<7, 6>::from_raw(sq as u16);
+                board.pieces[piece as usize].set(Connect4Square::from_row_column(
+                    conventional_sq.rank(),
+                    conventional_sq.file(),
+                ));
             },
             parts[0],
             7,
@@ -130,7 +211,7 @@ impl CopyMakeBoard for Connect4State {
         if self.is_loss() {
             return GameResult::LOSS;
         }
-        if self.occ() == Bitboard::<7, 6>::ALL {
+        if self.occ() == Connect4Bitboard::VALID {
             return GameResult::DRAW;
         }
 
@@ -139,13 +220,9 @@ impl CopyMakeBoard for Connect4State {
 
     fn gen_moves(&self) -> Self::MoveList {
         let mut moves = ArrayVec::new();
-        for file in 0..7 {
-            let col = self.occ() & Bitboard::<7, 6>::file(file);
-            if col == Bitboard::<7, 6>::file(file) {
-                continue;
-            }
-            let rank = if col.empty() { 0 } else { col.msb().rank() + 1 };
-            moves.push(Connect4Move(Connect4Square::from_rank_file(rank, file)));
+        let mut move_locations = self.move_locations();
+        while move_locations.any() {
+            moves.push(Connect4Move(move_locations.poplsb()));
         }
         moves
     }
@@ -160,11 +237,10 @@ impl CopyMakeBoard for Connect4State {
 impl fmt::Display for Connect4State {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "---------\n")?;
-        for rank in (0..6).rev() {
+        for row in (0..6).rev() {
             write!(f, "|")?;
-            for file in 0..7 {
-                let sq = rank * 7 + file;
-                match self.piece_on(Connect4Square::from_raw(sq)) {
+            for column in 0..7 {
+                match self.piece_on(Connect4Square::from_row_column(row, column)) {
                     Some(Connect4Color::Red) => write!(f, "r")?,
                     Some(Connect4Color::Yellow) => write!(f, "y")?,
                     None => write!(f, ".")?,
