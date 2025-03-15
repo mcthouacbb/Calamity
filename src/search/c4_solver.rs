@@ -59,7 +59,8 @@ impl Connect4Solver {
     fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move) -> i32 {
         let col = mv.sq().column();
         let row = mv.sq().row();
-        let base_score = -3 * (col.abs_diff(3) as i32) - (row.abs_diff(3) as i32) + 5 * (row % 2 == 1) as i32;
+        let base_score =
+            -3 * (col.abs_diff(3) as i32) - (row.abs_diff(3) as i32) + 5 * (row % 2 == 1) as i32;
 
         let threats_after = board.curr_state().our_threats_after(mv);
         let moves_after = board.curr_state().move_locations_after(mv);
