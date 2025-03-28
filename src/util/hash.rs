@@ -1,8 +1,8 @@
 pub const fn murmur_hash3(mut key: u64) -> u64 {
     key ^= key >> 33;
-    key *= 0xff51afd7ed558ccd;
+    key = key.wrapping_mul(0xff51afd7ed558ccd);
     key ^= key >> 33;
-    key *= 0xc4ceb9fe1a85ec53;
+    key = key.wrapping_mul(0xc4ceb9fe1a85ec53);
     key ^= key >> 33;
     return key;
 }

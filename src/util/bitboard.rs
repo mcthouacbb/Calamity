@@ -111,7 +111,7 @@ impl<const WIDTH: u8, const HEIGHT: u8> Bitboard<WIDTH, HEIGHT> {
     }
 
     pub const fn multiple(self) -> bool {
-        self.value() & (self.value() - 1) > 0
+        self.value() & (self.value().wrapping_sub(1)) > 0
     }
 
     pub const fn one(self) -> bool {
