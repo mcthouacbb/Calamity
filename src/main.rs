@@ -26,6 +26,7 @@ pub fn parse_move(board: &ThreeCheckBoard, str: &str) -> three_check::Move {
             return mv;
         }
     }
+    panic!("WTF {}", str);
     three_check::Move::NULL
 }
 
@@ -82,6 +83,9 @@ fn run_three_check() {
             Some("uci") => {
                 println!("id name calamity");
                 println!("id author mcthouacbb");
+                println!("option name Hash type spin default 1 min 1 max 1");
+                println!("option name UCI_3Check type check default true");
+                // println!("option name UCI_Variant type combo default chess var 3check var 5check");
                 println!("uciok");
             }
             Some("isready") => {
@@ -103,6 +107,11 @@ fn run_three_check() {
             },
             Some("go") => {
                 println!("bestmove {}", select_random_move(&curr_board));
+            }
+            Some("aaa") => {
+                for mv in curr_board.gen_moves() {
+                    println!("{}", mv);
+                }
             }
             Some("d") => {
                 println!("{}", &mut curr_board);
