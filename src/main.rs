@@ -1,3 +1,4 @@
+mod eval;
 mod games;
 mod perft;
 mod search;
@@ -14,8 +15,8 @@ use games::{
 };
 use search::{
     ab_solver::ABSolver,
-    c4_solver::{C4Benchmark, run_benchmark},
-    search::{Search, SearchLimits},
+    c4_solver::{run_benchmark, C4Benchmark},
+    search::{Search, SearchLimits}, three_check::ThreeCheckSearch,
 };
 use util::Square;
 
@@ -85,7 +86,6 @@ fn run_three_check() {
                 println!("id author mcthouacbb");
                 println!("option name Hash type spin default 1 min 1 max 1");
                 println!("option name UCI_3Check type check default true");
-                // println!("option name UCI_Variant type combo default chess var 3check var 5check");
                 println!("uciok");
             }
             Some("isready") => {
@@ -106,7 +106,12 @@ fn run_three_check() {
                 }
             },
             Some("go") => {
-                println!("bestmove {}", select_random_move(&curr_board));
+                let mut search = ThreeCheckSearch::new();
+                let mut limits = SearchLimits::default();
+                limits.max_depth = Some(1);
+                let results = search.search(&curr_board, limits);
+                // println!("bestmove {}", select_random_move(&curr_board));
+                println!("bestmove {}", results.best_move);
             }
             Some("aaa") => {
                 for mv in curr_board.gen_moves() {

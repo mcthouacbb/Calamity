@@ -208,11 +208,7 @@ impl Move {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.kind() == MoveKind::Castle {
-            let offset = if self.to_sq() > self.from_sq() {
-                2
-            } else {
-                -2
-            };
+            let offset = if self.to_sq() > self.from_sq() { 2 } else { -2 };
             return write!(f, "{}{}", self.from_sq(), self.from_sq() + offset);
         }
         write!(f, "{}{}", self.from_sq(), self.to_sq())?;
