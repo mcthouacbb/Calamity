@@ -28,7 +28,7 @@ pub struct ThreeCheckState {
 
 impl ThreeCheckState {
     const STARTPOS_FEN: &'static str =
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 +0+0";
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 3+3 0 1";
 
     pub fn from_fen(fen: &str) -> Option<Self> {
         let mut board = Self::empty();
@@ -178,7 +178,28 @@ impl ThreeCheckState {
             ));
         }
 
-        match parts[4].parse::<u8>() {
+        let checks: Vec<&str> = parts[4].split('+').collect();
+        if checks.len() != 2 {
+            return None;
+        }
+        match checks[0].parse::<u8>() {
+            Ok(n) => {
+                board.check_count[0] = 3 - n;
+            }
+            Err(_) => {
+                return None;
+            }
+        }
+        match checks[1].parse::<u8>() {
+            Ok(n) => {
+                board.check_count[1] = 3 - n;
+            }
+            Err(_) => {
+                return None;
+            }
+        }
+
+        match parts[5].parse::<u8>() {
             Ok(n) => {
                 board.half_move_clock = n;
             }
@@ -188,27 +209,6 @@ impl ThreeCheckState {
         }
         if board.half_move_clock > 100 {
             return None;
-        }
-
-        let checks: Vec<&str> = parts[6].split('+').collect();
-        if checks.len() != 3 {
-            return None;
-        }
-        match checks[1].parse::<u8>() {
-            Ok(n) => {
-                board.check_count[0] = n;
-            }
-            Err(_) => {
-                return None;
-            }
-        }
-        match checks[2].parse::<u8>() {
-            Ok(n) => {
-                board.check_count[1] = n;
-            }
-            Err(_) => {
-                return None;
-            }
         }
 
         board.update_check_info();
@@ -270,14 +270,14 @@ impl ThreeCheckState {
             }
         }
 
-        fen += format!("{} 1 ", self.half_move_clock).as_str();
-
         fen += format!(
-            "+{}+{}",
-            self.check_count(Color::White),
-            self.check_count(Color::Black)
+            "{}+{} ",
+            3 - self.check_count(Color::White),
+            3 - self.check_count(Color::Black)
         )
         .as_str();
+
+        fen += format!("{} 1 ", self.half_move_clock).as_str();
 
         fen
     }
