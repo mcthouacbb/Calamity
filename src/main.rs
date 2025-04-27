@@ -4,13 +4,18 @@ mod search;
 mod util;
 
 use games::{
-    board::Board, connect4::Connect4Board, hexapawn::HexapawnBoard, tictactoe::TicTacToeBoard,
+    board::Board,
+    connect4::Connect4Board,
+    hexapawn::HexapawnBoard,
+    three_check::{self, ThreeCheckBoard, ThreeCheckState},
+    tictactoe::TicTacToeBoard,
 };
 use search::{
     ab_solver::ABSolver,
     c4_solver::{C4Benchmark, run_benchmark},
     search::{Search, SearchLimits},
 };
+use util::Square;
 
 fn main() {
     // perft::run_perft_suite_file::<Connect4Board>("res/c4_perft.txt");
@@ -27,10 +32,8 @@ fn main() {
     let mut solver = ABSolver::<HexapawnBoard>::new();
     let result = solver.search(&board, SearchLimits::default());
     println!("{:?}", result);*/
-    run_benchmark(C4Benchmark::EndEasy);
-    run_benchmark(C4Benchmark::MidEasy);
-    run_benchmark(C4Benchmark::MidMedium);
-    run_benchmark(C4Benchmark::BeginEasy);
-    run_benchmark(C4Benchmark::BeginMedium);
-    run_benchmark(C4Benchmark::BeginHard);
+
+    let mut board = three_check::ThreeCheckBoard::startpos();
+
+    println!("{}", board);
 }

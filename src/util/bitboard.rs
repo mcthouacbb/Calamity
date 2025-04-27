@@ -84,6 +84,10 @@ impl<const WIDTH: u8, const HEIGHT: u8> Bitboard<WIDTH, HEIGHT> {
         Self((self.value() >> 1) & !Self::LAST_FILE.value())
     }
 
+    pub const fn swap_bytes(self) -> Self {
+        Self(self.value().swap_bytes())
+    }
+
     pub const fn lsb(self) -> Square<WIDTH, HEIGHT> {
         Square::from_raw(self.value().trailing_zeros() as u16)
     }
