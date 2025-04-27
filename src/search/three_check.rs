@@ -47,8 +47,8 @@ impl ThreeCheckSearch {
         board: &mut ThreeCheckBoard,
 		depth: i32,
         ply: i32,
-        mut alpha: i32,
-        mut beta: i32,
+        mut _alpha: i32,
+        mut _beta: i32,
     ) -> i32 {
         // mate distance pruning, prune if it's impossible to change the search result
         // even if we win in the current position
@@ -69,7 +69,7 @@ impl ThreeCheckSearch {
 			return ThreeCheckEval::evaluate(board);
 		}
 
-        let mut moves = board.gen_moves();
+        let moves = board.gen_moves();
         let mut best_score = -Self::SCORE_WIN;
 
         for mv in moves.iter() {
@@ -79,23 +79,15 @@ impl ThreeCheckSearch {
             self.nodes += 1;
 
             let mut score = 0;
-			score = -self.alpha_beta(board, depth - 1, ply + 1, -beta, -alpha);
+			score = -self.alpha_beta(board, depth - 1, ply + 1, -_beta, -_alpha);
 
             board.unmake_move();
 
             if score > best_score {
                 best_score = score;
-            }
-
-            if score > alpha {
-                alpha = score;
                 if ply == 0 {
                     self.root_best_move = Some(mv);
                 }
-            }
-
-            if score >= beta {
-                break;
             }
         }
 
