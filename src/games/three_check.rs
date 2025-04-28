@@ -359,6 +359,10 @@ impl ThreeCheckState {
         self.zkey.toggle_stm();*/
 
         self.update_check_info();
+
+        if self.checkers().any() {
+            self.check_count[self.stm as usize] += 1;
+        }
     }
 
     pub fn stm(&self) -> Color {
@@ -558,10 +562,6 @@ impl ThreeCheckState {
     fn update_check_info(&mut self) {
         let king_sq = self.king_sq(self.stm());
         self.checkers = self.attackers_to(king_sq, self.stm().flip());
-
-        if self.checkers().any() {
-            self.check_count[self.stm as usize] += 1;
-        }
 
         // this includes enemy pieces as pinned but they are ignored so it is fine
         self.diag_pinned = Bitboard::NONE;
