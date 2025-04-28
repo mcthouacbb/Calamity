@@ -1,3 +1,4 @@
+use core::fmt;
 use std::ops;
 
 // Square represents a location on a rectangular 2d board
@@ -58,5 +59,17 @@ impl<const WIDTH: u8, const HEIGHT: u8> ops::Sub<Self> for Square<WIDTH, HEIGHT>
     type Output = i32;
     fn sub(self, rhs: Self) -> Self::Output {
         self.0 as i32 - rhs.0 as i32
+    }
+}
+
+impl<const WIDTH: u8, const HEIGHT: u8> fmt::Display for Square<WIDTH, HEIGHT> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO: handle ranks > 10
+        write!(
+            f,
+            "{}{}",
+            ('a' as u8 + self.file()) as char,
+            ('1' as u8 + self.rank()) as char
+        )
     }
 }
