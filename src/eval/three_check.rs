@@ -7,6 +7,8 @@ pub struct ThreeCheckEval {}
 
 impl Eval<ThreeCheckBoard> for ThreeCheckEval {
     fn evaluate(board: &ThreeCheckBoard) -> i32 {
+        const CHECK_PENALTY: [i32; 3] = [0, -200, -750];
+
         let state = board.curr_state();
         let mut eval = 100
             * (state.colored_pieces(Piece::WhitePawn).popcount() as i32
@@ -23,6 +25,9 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
         eval += 900
             * (state.colored_pieces(Piece::WhiteQueen).popcount() as i32
                 - state.colored_pieces(Piece::BlackQueen).popcount() as i32);
+
+        eval += CHECK_PENALTY[state.check_count(Color::White) as usize]
+            - CHECK_PENALTY[state.check_count(Color::Black) as usize];
 
         if state.stm() == Color::White {
             eval
