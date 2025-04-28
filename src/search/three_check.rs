@@ -98,7 +98,8 @@ impl ThreeCheckSearch {
             self.nodes += 1;
 
             let mut score = 0;
-            score = -self.alpha_beta(board, depth - 1, ply + 1, -beta, -alpha);
+            let new_depth = depth - 1 + board.curr_state().checkers().any() as i32;
+            score = -self.alpha_beta(board, new_depth, ply + 1, -beta, -alpha);
 
             board.unmake_move();
             if self.stop {
