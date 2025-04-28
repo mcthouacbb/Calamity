@@ -11,7 +11,7 @@ use crate::{
 use super::search::{Search, SearchLimits, SearchResult};
 
 fn mvv_lva(captured: PieceType, moving: PieceType) -> i32 {
-	return 8 * captured as i32 - moving as i32;
+    return 8 * captured as i32 - moving as i32;
 }
 
 pub struct ThreeCheckSearch {
@@ -38,12 +38,12 @@ impl ThreeCheckSearch {
     }
 
     fn score_move(&mut self, board: &mut ThreeCheckBoard, mv: Move) -> i32 {
-		let state = board.curr_state();
-		let moving = state.piece_at(mv.from_sq()).unwrap().piece_type();
-		if let Some(captured) = state.piece_at(mv.to_sq()) {
-			return mvv_lva(captured.piece_type(), moving) + 100;
-		}
-		0
+        let state = board.curr_state();
+        let moving = state.piece_at(mv.from_sq()).unwrap().piece_type();
+        if let Some(captured) = state.piece_at(mv.to_sq()) {
+            return mvv_lva(captured.piece_type(), moving) + 100;
+        }
+        0
     }
 
     fn order_moves(&mut self, board: &mut ThreeCheckBoard, moves: &mut MoveList) {
@@ -88,7 +88,7 @@ impl ThreeCheckSearch {
         }
 
         let mut moves = board.gen_moves();
-		self.order_moves(board, &mut moves);
+        self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
 
         for mv in moves.iter() {
