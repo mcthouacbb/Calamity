@@ -23,11 +23,11 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
         eval += 900
             * (state.colored_pieces(Piece::WhiteQueen).popcount() as i32
                 - state.colored_pieces(Piece::BlackQueen).popcount() as i32);
-		
-		if state.stm() == Color::White {
-			eval
-		} else {
-			-eval
-		}
+
+        if state.stm() == Color::White {
+            eval
+        } else {
+            -eval
+        }
     }
 }

@@ -10,13 +10,14 @@ use games::{
     board::Board,
     connect4::Connect4Board,
     hexapawn::HexapawnBoard,
-    three_check::{self, ThreeCheckBoard, ThreeCheckState},
+    three_check::{self, Color, ThreeCheckBoard, ThreeCheckState},
     tictactoe::TicTacToeBoard,
 };
 use search::{
     ab_solver::ABSolver,
-    c4_solver::{run_benchmark, C4Benchmark},
-    search::{Search, SearchLimits}, three_check::ThreeCheckSearch,
+    c4_solver::{C4Benchmark, run_benchmark},
+    search::{Search, SearchLimits},
+    three_check::ThreeCheckSearch,
 };
 use util::Square;
 
@@ -108,7 +109,26 @@ fn run_three_check() {
             Some("go") => {
                 let mut search = ThreeCheckSearch::new();
                 let mut limits = SearchLimits::default();
-                limits.max_depth = Some(1);
+                loop {
+                    match toks.next() {
+                        Some("wtime") => {
+                            if curr_board.curr_state().stm() == Color::White {
+                                limits.max_time = Some(
+                                    toks.next().unwrap().parse::<i32>().unwrap().max(0) as u64 / 30,
+                                );
+                            }
+                        }
+                        Some("btime") => {
+                            if curr_board.curr_state().stm() == Color::Black {
+                                limits.max_time = Some(
+                                    toks.next().unwrap().parse::<i32>().unwrap().max(0) as u64 / 30,
+                                );
+                            }
+                        }
+                        Some(_) => {}
+                        None => break,
+                    }
+                }
                 let results = search.search(&curr_board, limits);
                 // println!("bestmove {}", select_random_move(&curr_board));
                 println!("bestmove {}", results.best_move);
