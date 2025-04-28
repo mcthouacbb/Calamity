@@ -4,11 +4,15 @@ use crate::{
     eval::{Eval, ThreeCheckEval},
     games::{
         board::{Board, GameResult},
-        three_check::{Move, ThreeCheckBoard},
+        three_check::{Move, MoveList, PieceType, ThreeCheckBoard},
     },
 };
 
 use super::search::{Search, SearchLimits, SearchResult};
+
+fn mvv_lva(captured: PieceType, moving: PieceType) -> i32 {
+	return 8 * captured as i32 - moving as i32;
+}
 
 pub struct ThreeCheckSearch {
     nodes: u64,
@@ -33,25 +37,18 @@ impl ThreeCheckSearch {
         }
     }
 
-    // fn score_move(&mut self, board: &mut Connect4Board, mv: Connect4Move) -> i32 {
-    //     let col = mv.sq().column();
-    //     let row = mv.sq().row();
-    //     let base_score =
-    //         -3 * (col.abs_diff(3) as i32) - (row.abs_diff(3) as i32) + 5 * (row % 2 == 1) as i32;
+    fn score_move(&mut self, board: &mut ThreeCheckBoard, mv: Move) -> i32 {
+		let state = board.curr_state();
+		let moving = state.piece_at(mv.from_sq()).unwrap().piece_type();
+		if let Some(captured) = state.piece_at(mv.to_sq()) {
+			return mvv_lva(captured.piece_type(), moving) + 100;
+		}
+		0
+    }
 
-    //     let threats_after = board.curr_state().our_threats_after(mv);
-    //     let moves_after = board.curr_state().move_locations_after(mv);
-    //     let double_threat = (threats_after & moves_after).multiple()
-    //         || (threats_after & threats_after.south() & moves_after).any();
-    //     base_score
-    //         + 20 * threats_after.popcount() as i32
-    //         + 30 * (threats_after & moves_after).popcount() as i32
-    //         + 100 * double_threat as i32
-    // }
-
-    // fn order_moves(&mut self, board: &mut Connect4Board, moves: &mut ArrayVec<Connect4Move, 7>) {
-    //     moves.sort_by_key(|mv: &Connect4Move| -self.score_move(board, *mv));
-    // }
+    fn order_moves(&mut self, board: &mut ThreeCheckBoard, moves: &mut MoveList) {
+        moves.sort_by_key(|mv: &Move| -self.score_move(board, *mv));
+    }
 
     fn alpha_beta(
         &mut self,
@@ -90,7 +87,8 @@ impl ThreeCheckSearch {
             return ThreeCheckEval::evaluate(board);
         }
 
-        let moves = board.gen_moves();
+        let mut moves = board.gen_moves();
+		self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
 
         for mv in moves.iter() {
