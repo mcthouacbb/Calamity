@@ -40,7 +40,7 @@ where
         }
     }
 
-    pub fn store(&mut self, key: u64, mut data: D) {
+    pub fn store(&mut self, key: u64, data: D) {
         let idx = key as usize % self.data.len();
         self.data[idx] = TTEntry::<D> {
             key: key,

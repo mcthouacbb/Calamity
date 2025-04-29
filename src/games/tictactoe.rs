@@ -5,7 +5,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     games::board::{CopyMakeBoard, CopyMakeWrapper, GameResult},
-    util::{Bitboard, Square, parse_fen_pieces},
+    util::{Square, parse_fen_pieces},
 };
 
 pub type TicTacToeSquare = Square<3, 3>;

@@ -1,13 +1,10 @@
-use std::{
-    default,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{
     eval::{Eval, ThreeCheckEval},
     games::{
-        board::{Board, GameResult},
-        three_check::{Move, MoveList, PieceType, ThreeCheckBoard, ZobristKey},
+        board::Board,
+        three_check::{Move, MoveList, PieceType, ThreeCheckBoard},
     },
 };
 
@@ -77,7 +74,7 @@ impl ThreeCheckSearch {
         depth: i32,
         ply: i32,
         mut alpha: i32,
-        mut beta: i32,
+        beta: i32,
     ) -> i32 {
         // mate distance pruning, prune if it's impossible to change the search result
         // even if we win in the current position
@@ -105,7 +102,7 @@ impl ThreeCheckSearch {
             return 0;
         }
 
-        let ttEntry = self.tt.probe(board.curr_state().zkey().value());
+        let tt_entry = self.tt.probe(board.curr_state().zkey().value());
 
         if depth <= 0 {
             return ThreeCheckEval::evaluate(board);
@@ -129,7 +126,7 @@ impl ThreeCheckSearch {
             return 0;
         }
 
-        self.order_moves(board, &mut moves, ttEntry.and_then(|tte| tte.mv));
+        self.order_moves(board, &mut moves, tt_entry.and_then(|tte| tte.mv));
         let mut best_score = -Self::SCORE_WIN;
         let mut best_move = None;
 
