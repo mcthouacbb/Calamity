@@ -2,12 +2,14 @@ pub mod attacks;
 mod castling_rooks;
 mod movegen;
 pub mod types;
+mod zobrist;
 
 use core::fmt;
 
 use castling_rooks::CastlingRooks;
 pub use movegen::MoveList;
 pub use types::{Bitboard, Color, Move, MoveKind, Piece, PieceType, Square};
+pub use zobrist::ZobristKey;
 
 use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
 
@@ -23,7 +25,8 @@ pub struct ThreeCheckState {
     stm: Color,
     ep_square: Option<Square>,
     half_move_clock: u8,
-    check_count: [u8; 2], // zkey: ZobristKey,
+    check_count: [u8; 2],
+    zkey: ZobristKey,
 }
 
 impl ThreeCheckState {
@@ -212,14 +215,21 @@ impl ThreeCheckState {
         }
 
         board.update_check_info();
-        /*board.zkey.toggle_castle_rights(board.castling_rooks());
+        board.zkey.toggle_castle_rights(board.castling_rooks());
         if let Some(ep_square) = board.ep_square() {
             board.zkey.toggle_ep_square(ep_square);
         }
 
         if board.stm() == Color::Black {
             board.zkey.toggle_stm();
-        }*/
+        }
+
+        board
+            .zkey
+            .toggle_check(Color::White, board.check_count(Color::White));
+        board
+            .zkey
+            .toggle_check(Color::Black, board.check_count(Color::Black));
 
         Some(board)
     }
@@ -283,10 +293,10 @@ impl ThreeCheckState {
     }
 
     pub fn make_move(&mut self, mv: Move) {
-        /*if let Some(ep_square) = self.ep_square() {
+        if let Some(ep_square) = self.ep_square() {
             self.zkey.toggle_ep_square(ep_square);
         }
-        self.zkey.toggle_castle_rights(self.castling_rooks);*/
+        self.zkey.toggle_castle_rights(self.castling_rooks);
 
         let from = mv.from_sq();
         let to = mv.to_sq();
@@ -352,16 +362,18 @@ impl ThreeCheckState {
 
         self.stm = self.stm.flip();
 
-        /*if let Some(ep_square) = self.ep_square() {
+        if let Some(ep_square) = self.ep_square() {
             self.zkey.toggle_ep_square(ep_square);
         }
         self.zkey.toggle_castle_rights(self.castling_rooks);
-        self.zkey.toggle_stm();*/
+        self.zkey.toggle_stm();
 
         self.update_check_info();
 
         if self.checkers().any() {
+            self.zkey.toggle_check(self.stm, self.check_count(self.stm));
             self.check_count[self.stm as usize] += 1;
+            self.zkey.toggle_check(self.stm, self.check_count(self.stm));
         }
     }
 
@@ -447,7 +459,7 @@ impl ThreeCheckState {
             | (attacks::rook_attacks(sq, occ) & hvs)
     }
 
-    pub fn is_drawn(&self /*, keys: &Vec<ZobristKey>*/) -> bool {
+    pub fn is_drawn(&self /*, keys: Vec<ZobristKey>*/) -> bool {
         if self.half_move_clock >= 100 {
             return true;
         }
@@ -489,7 +501,7 @@ impl ThreeCheckState {
         self.ep_square
     }
 
-    /*pub fn zkey(&self) -> ZobristKey {
+    pub fn zkey(&self) -> ZobristKey {
         self.zkey
     }
 
@@ -508,8 +520,10 @@ impl ThreeCheckState {
         if self.stm() == Color::Black {
             key.toggle_stm();
         }
+        key.toggle_check(Color::White, self.check_count(Color::White));
+        key.toggle_check(Color::Black, self.check_count(Color::Black));
         key
-    }*/
+    }
 
     fn empty() -> ThreeCheckState {
         Self {
@@ -524,7 +538,7 @@ impl ThreeCheckState {
             ep_square: None,
             half_move_clock: 0,
             check_count: [0; 2],
-            // zkey: ZobristKey::new(),
+            zkey: ZobristKey::new(),
         }
     }
 
@@ -534,7 +548,7 @@ impl ThreeCheckState {
         self.colors[piece.color() as usize] |= sq_bb;
         self.squares[sq.value() as usize] = Some(piece);
 
-        // self.zkey.toggle_piece(piece, sq);
+        self.zkey.toggle_piece(piece, sq);
     }
 
     fn remove_piece(&mut self, sq: Square) {
@@ -544,7 +558,7 @@ impl ThreeCheckState {
         self.colors[piece.color() as usize] ^= sq_bb;
         self.squares[sq.value() as usize] = None;
 
-        // self.zkey.toggle_piece(piece, sq);
+        self.zkey.toggle_piece(piece, sq);
     }
 
     fn move_piece(&mut self, from: Square, to: Square) {
@@ -555,8 +569,8 @@ impl ThreeCheckState {
         self.squares[from.value() as usize] = None;
         self.squares[to.value() as usize] = Some(piece);
 
-        // self.zkey.toggle_piece(piece, from);
-        // self.zkey.toggle_piece(piece, to);
+        self.zkey.toggle_piece(piece, from);
+        self.zkey.toggle_piece(piece, to);
     }
 
     fn update_check_info(&mut self) {
@@ -615,10 +629,11 @@ impl CopyMakeBoard for ThreeCheckState {
         Self::from_fen(fen)
     }
 
+    // broken for now
     fn game_result(&self) -> super::board::GameResult {
-        if self.is_drawn() {
-            return GameResult::DRAW;
-        }
+        // if self.is_drawn() {
+        // return GameResult::DRAW;
+        // }
 
         if self.check_count(self.stm()) >= 3 {
             return GameResult::LOSS;
