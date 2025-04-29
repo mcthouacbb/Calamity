@@ -111,6 +111,16 @@ impl ThreeCheckSearch {
             return ThreeCheckEval::evaluate(board);
         }
 
+        let in_check = board.curr_state().checkers().any();
+        let root = ply == 0;
+
+        if !in_check && !root {
+            let static_eval = ThreeCheckEval::evaluate(board);
+            if depth <= 4 && static_eval - 100 * depth >= beta {
+                return static_eval;
+            }
+        }
+
         let mut moves = board.gen_moves();
         if moves.len() == 0 {
             if board.curr_state().checkers().any() {
