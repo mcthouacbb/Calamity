@@ -4,7 +4,7 @@ use crate::{
     eval::{Eval, ThreeCheckEval},
     games::{
         board::{Board, GameResult},
-        three_check::{Move, MoveList, PieceType, ThreeCheckBoard},
+        three_check::{Move, MoveList, PieceType, ThreeCheckBoard, ZobristKey},
     },
 };
 
@@ -76,11 +76,12 @@ impl ThreeCheckSearch {
             }
         }
 
-        match board.game_result() {
-            GameResult::WIN => return Self::SCORE_WIN - ply,
-            GameResult::DRAW => return 0,
-            GameResult::LOSS => return -Self::SCORE_WIN + ply,
-            _ => {}
+        if board.curr_state().check_count(board.curr_state().stm()) >= 3 {
+            return -Self::SCORE_WIN + ply;
+        }
+
+        if board.curr_state().is_drawn() {
+            return 0;
         }
 
         if depth <= 0 {
@@ -88,6 +89,13 @@ impl ThreeCheckSearch {
         }
 
         let mut moves = board.gen_moves();
+        if moves.len() == 0 {
+            if board.curr_state().checkers().any() {
+                return -Self::SCORE_WIN + ply;
+            }
+            return 0;
+        }
+
         self.order_moves(board, &mut moves);
         let mut best_score = -Self::SCORE_WIN;
 
