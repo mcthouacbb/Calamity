@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    default,
+    time::{Duration, Instant},
+};
 
 use crate::{
     eval::{Eval, ThreeCheckEval},
@@ -8,10 +11,18 @@ use crate::{
     },
 };
 
-use super::search::{Search, SearchLimits, SearchResult};
+use super::{
+    search::{Search, SearchLimits, SearchResult},
+    tt::TT,
+};
 
 fn mvv_lva(captured: PieceType, moving: PieceType) -> i32 {
     return 8 * captured as i32 - moving as i32;
+}
+
+#[derive(Debug, Default, Clone)]
+struct TTEntry {
+    mv: Option<Move>,
 }
 
 pub struct ThreeCheckSearch {
@@ -21,6 +32,7 @@ pub struct ThreeCheckSearch {
     stop: bool,
     start_time: Instant,
     limits: SearchLimits,
+    tt: TT<TTEntry>,
 }
 
 impl ThreeCheckSearch {
@@ -34,10 +46,14 @@ impl ThreeCheckSearch {
             root_depth: 0,
             start_time: Instant::now(),
             limits: SearchLimits::default(),
+            tt: TT::new(16),
         }
     }
 
-    fn score_move(&mut self, board: &mut ThreeCheckBoard, mv: Move) -> i32 {
+    fn score_move(&mut self, board: &mut ThreeCheckBoard, mv: Move, tt_move: Option<Move>) -> i32 {
+        if Some(mv) == tt_move {
+            return 1000000;
+        }
         let state = board.curr_state();
         let moving = state.piece_at(mv.from_sq()).unwrap().piece_type();
         if let Some(captured) = state.piece_at(mv.to_sq()) {
@@ -46,8 +62,13 @@ impl ThreeCheckSearch {
         0
     }
 
-    fn order_moves(&mut self, board: &mut ThreeCheckBoard, moves: &mut MoveList) {
-        moves.sort_by_key(|mv: &Move| -self.score_move(board, *mv));
+    fn order_moves(
+        &mut self,
+        board: &mut ThreeCheckBoard,
+        moves: &mut MoveList,
+        tt_move: Option<Move>,
+    ) {
+        moves.sort_by_key(|mv: &Move| -self.score_move(board, *mv, tt_move));
     }
 
     fn alpha_beta(
@@ -84,6 +105,8 @@ impl ThreeCheckSearch {
             return 0;
         }
 
+        let ttEntry = self.tt.probe(board.curr_state().zkey().value());
+
         if depth <= 0 {
             return ThreeCheckEval::evaluate(board);
         }
@@ -96,8 +119,9 @@ impl ThreeCheckSearch {
             return 0;
         }
 
-        self.order_moves(board, &mut moves);
+        self.order_moves(board, &mut moves, ttEntry.and_then(|tte| tte.mv));
         let mut best_score = -Self::SCORE_WIN;
+        let mut best_move = None;
 
         for mv in moves.iter() {
             let mv = *mv;
@@ -120,6 +144,7 @@ impl ThreeCheckSearch {
 
             if score > alpha {
                 alpha = score;
+                best_move = Some(mv);
                 if ply == 0 {
                     self.root_best_move = Some(mv);
                 }
@@ -130,10 +155,15 @@ impl ThreeCheckSearch {
             }
         }
 
+        self.tt
+            .store(board.curr_state().zkey().value(), TTEntry { mv: best_move });
+
         best_score
     }
 
-    pub fn clear(&mut self) {}
+    pub fn clear(&mut self) {
+        self.tt.clear();
+    }
 }
 
 impl Search<ThreeCheckBoard> for ThreeCheckSearch {
@@ -154,7 +184,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         if let Some(max) = limits.max_depth {
             max_depth = max_depth.min(max as i32);
         }
-        let mut best_move = Move::NULL;
+        let mut best_move = None;
         for depth in 1..max_depth {
             self.root_depth = depth;
             let iter_score =
@@ -164,7 +194,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
             }
 
             score = iter_score;
-            best_move = self.root_best_move.unwrap();
+            best_move = self.root_best_move;
             let elapsed = Instant::now() - self.start_time;
             println!(
                 "info depth {} nodes {} time {} score cp {} nps {} pv {}",
@@ -173,7 +203,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
                 elapsed.as_millis(),
                 score,
                 (self.nodes as f64 / elapsed.as_secs_f64()) as i32,
-                best_move
+                best_move.unwrap()
             );
         }
         let end_time = Instant::now();
@@ -181,7 +211,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         SearchResult {
             nodes: self.nodes,
             time: end_time - self.start_time,
-            best_move: best_move,
+            best_move: best_move.unwrap(),
             score: score,
             pv: Vec::new(),
         }

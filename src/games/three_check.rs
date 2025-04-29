@@ -224,8 +224,12 @@ impl ThreeCheckState {
             board.zkey.toggle_stm();
         }
 
-        board.zkey.toggle_check(Color::White, board.check_count(Color::White));
-        board.zkey.toggle_check(Color::Black, board.check_count(Color::Black));
+        board
+            .zkey
+            .toggle_check(Color::White, board.check_count(Color::White));
+        board
+            .zkey
+            .toggle_check(Color::Black, board.check_count(Color::Black));
 
         Some(board)
     }
@@ -455,7 +459,7 @@ impl ThreeCheckState {
             | (attacks::rook_attacks(sq, occ) & hvs)
     }
 
-    pub fn is_drawn(&self/*, keys: Vec<ZobristKey>*/) -> bool {
+    pub fn is_drawn(&self /*, keys: Vec<ZobristKey>*/) -> bool {
         if self.half_move_clock >= 100 {
             return true;
         }
@@ -628,7 +632,7 @@ impl CopyMakeBoard for ThreeCheckState {
     // broken for now
     fn game_result(&self) -> super::board::GameResult {
         // if self.is_drawn() {
-            // return GameResult::DRAW;
+        // return GameResult::DRAW;
         // }
 
         if self.check_count(self.stm()) >= 3 {

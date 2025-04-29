@@ -29,7 +29,6 @@ pub fn parse_move(board: &ThreeCheckBoard, str: &str) -> three_check::Move {
         }
     }
     panic!("WTF {}", str);
-    three_check::Move::NULL
 }
 
 fn parse_startpos(curr_board: &mut ThreeCheckBoard, toks: &mut SplitWhitespace<'_>) {
@@ -77,6 +76,7 @@ fn select_random_move(board: &ThreeCheckBoard) -> three_check::Move {
 
 fn run_three_check() {
     let mut curr_board = ThreeCheckBoard::startpos();
+    let mut search = ThreeCheckSearch::new();
     loop {
         let mut command = String::new();
         stdin().read_line(&mut command).expect("Bad input");
@@ -93,7 +93,7 @@ fn run_three_check() {
                 println!("readyok");
             }
             Some("ucinewgame") => {
-                // empty for now
+                search.clear();
             }
             Some("position") => match toks.next() {
                 Some("startpos") => {
@@ -107,7 +107,6 @@ fn run_three_check() {
                 }
             },
             Some("go") => {
-                let mut search = ThreeCheckSearch::new();
                 let mut limits = SearchLimits::default();
                 loop {
                     match toks.next() {

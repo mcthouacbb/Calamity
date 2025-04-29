@@ -1,5 +1,5 @@
-use super::{Color, Piece, Square};
 use super::CastlingRooks;
+use super::{Color, Piece, Square};
 
 // lol
 const fn xorshift64(mut x: u64) -> u64 {
@@ -13,7 +13,7 @@ struct ZobristKeys {
     piece_squares: [[u64; 12]; 64],
     castling_rights: [u64; 16],
     enpassant: [u64; 8],
-	checks: [[u64; 4]; 2],
+    checks: [[u64; 4]; 2],
     stm: u64,
 }
 
@@ -22,7 +22,7 @@ const ZOBRIST_KEYS: ZobristKeys = {
         piece_squares: [[0; 12]; 64],
         castling_rights: [0; 16],
         enpassant: [0; 8],
-		checks: [[0; 4]; 2],
+        checks: [[0; 4]; 2],
         stm: 0,
     };
 
@@ -54,12 +54,12 @@ const ZOBRIST_KEYS: ZobristKeys = {
         i += 1;
     }
 
-	let mut i = 0;
-	while i < 8 {
-		result.checks[i / 4][i % 4] = rand;
-		rand = xorshift64(rand);
-		i += 1;
-	}
+    let mut i = 0;
+    while i < 8 {
+        result.checks[i / 4][i % 4] = rand;
+        rand = xorshift64(rand);
+        i += 1;
+    }
 
     result.stm = rand;
 
@@ -90,9 +90,9 @@ impl ZobristKey {
         self.0 ^= ZOBRIST_KEYS.enpassant[ep_square.file() as usize];
     }
 
-	pub fn toggle_check(&mut self, color: Color, checks: u8) {
-		self.0 ^= ZOBRIST_KEYS.checks[color as usize][checks as usize];
-	}
+    pub fn toggle_check(&mut self, color: Color, checks: u8) {
+        self.0 ^= ZOBRIST_KEYS.checks[color as usize][checks as usize];
+    }
 
     pub fn value(self) -> u64 {
         self.0
