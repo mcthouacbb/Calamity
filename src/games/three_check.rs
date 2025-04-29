@@ -377,6 +377,19 @@ impl ThreeCheckState {
         }
     }
 
+    pub fn make_null_move(&mut self) {
+        self.half_move_clock += 1;
+        if let Some(ep) = self.ep_square {
+            self.zkey.toggle_ep_square(ep);
+        }
+        self.zkey.toggle_stm();
+        self.ep_square = None;
+
+        self.stm = self.stm.flip();
+
+        self.update_check_info();
+    }
+
     pub fn stm(&self) -> Color {
         self.stm
     }
@@ -657,7 +670,11 @@ impl CopyMakeBoard for ThreeCheckState {
     }
 
     fn make_move(&mut self, mv: Self::Move) -> bool {
-        self.make_move(mv);
+        if mv == Move::NULL {
+            self.make_null_move();
+        } else {
+            self.make_move(mv);
+        }
         true
     }
 
