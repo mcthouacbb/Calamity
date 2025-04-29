@@ -10,16 +10,36 @@ use crate::{
 
 use super::{
     search::{Search, SearchLimits, SearchResult},
-    tt::TT,
+    tt::{TT, TTBound, decisive_score_from_tt},
 };
 
 fn mvv_lva(captured: PieceType, moving: PieceType) -> i32 {
     return 8 * captured as i32 - moving as i32;
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 struct TTEntry {
     mv: Option<Move>,
+    score: i16,
+    depth: u8,
+    bound: TTBound,
+}
+
+impl TTEntry {
+    fn adjust_from_tt(&mut self, ply: i32) {
+        // non zero scores are terminal
+        if self.score.abs() as i32 >= ThreeCheckSearch::SCORE_WIN - 128 {
+            self.score = decisive_score_from_tt(self.score as i32, ply) as i16;
+        }
+    }
+
+    fn to_tt(&self, ply: i32) -> Self {
+        let mut result = self.clone();
+        if result.score.abs() as i32 >= ThreeCheckSearch::SCORE_WIN - 128 {
+            result.score = decisive_score_from_tt(self.score as i32, ply) as i16;
+        }
+        result
+    }
 }
 
 pub struct ThreeCheckSearch {
@@ -102,19 +122,42 @@ impl ThreeCheckSearch {
             return 0;
         }
 
+        let in_check = board.curr_state().checkers().any();
+        let root = ply == 0;
+
         let tt_entry = self.tt.probe(board.curr_state().zkey().value());
+
+        if !root {
+            if let Some(entry) = tt_entry {
+                if entry.depth as i32 >= depth
+                    && (entry.bound == TTBound::EXACT
+                        || (entry.bound == TTBound::UPPER && entry.score as i32 <= alpha)
+                        || (entry.bound == TTBound::LOWER && entry.score as i32 >= beta))
+                {
+                    return entry.score as i32;
+                }
+            }
+        }
 
         if depth <= 0 {
             return ThreeCheckEval::evaluate(board);
         }
 
-        let in_check = board.curr_state().checkers().any();
-        let root = ply == 0;
-
         if !in_check && !root {
             let static_eval = ThreeCheckEval::evaluate(board);
             if depth <= 4 && static_eval - 100 * depth >= beta {
                 return static_eval;
+            }
+
+            if depth >= 3 {
+                let r = 3;
+                board.make_move(Move::NULL);
+                let score = -self.alpha_beta(board, depth - r, ply + 1, -beta, -beta + 1);
+                board.unmake_move();
+
+                if score >= beta {
+                    return score;
+                }
             }
         }
 
@@ -129,6 +172,7 @@ impl ThreeCheckSearch {
         self.order_moves(board, &mut moves, tt_entry.and_then(|tte| tte.mv));
         let mut best_score = -Self::SCORE_WIN;
         let mut best_move = None;
+        let mut tt_bound = TTBound::UPPER;
 
         for mv in moves.iter() {
             let mv = *mv;
@@ -152,18 +196,28 @@ impl ThreeCheckSearch {
             if score > alpha {
                 alpha = score;
                 best_move = Some(mv);
+                tt_bound = TTBound::EXACT;
+
                 if ply == 0 {
                     self.root_best_move = Some(mv);
                 }
             }
 
             if score >= beta {
+                tt_bound = TTBound::LOWER;
                 break;
             }
         }
 
-        self.tt
-            .store(board.curr_state().zkey().value(), TTEntry { mv: best_move });
+        self.tt.store(
+            board.curr_state().zkey().value(),
+            TTEntry {
+                mv: best_move,
+                depth: depth as u8,
+                score: best_score as i16,
+                bound: tt_bound,
+            },
+        );
 
         best_score
     }

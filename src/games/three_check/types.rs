@@ -156,6 +156,8 @@ pub struct Move {
 }
 
 impl Move {
+    pub const NULL: Self = Self { data: 0 };
+
     const fn new(from: Square, to: Square, kind: MoveKind, promo: u8) -> Self {
         Self {
             data: from.value()
