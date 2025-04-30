@@ -90,6 +90,78 @@ impl ThreeCheckSearch {
         moves.sort_by_key(|mv: &Move| -self.score_move(board, *mv, tt_move));
     }
 
+    fn qsearch(&mut self, board: &mut ThreeCheckBoard, ply: i32, mut alpha: i32, beta: i32) -> i32 {
+        if let Some(max_time) = self.limits.max_time {
+            if self.root_depth > 1
+                && self.nodes % 1024 == 0
+                && Instant::now() - self.start_time > Duration::from_millis(max_time)
+            {
+                self.stop = true;
+                return 0;
+            }
+        }
+
+        if board.curr_state().check_count(board.curr_state().stm()) >= 3 {
+            return -Self::SCORE_WIN + ply;
+        }
+
+        if board.curr_state().is_drawn() {
+            return 0;
+        }
+
+        let static_eval = ThreeCheckEval::evaluate(board);
+        if static_eval >= beta {
+            return static_eval;
+        }
+
+        if static_eval > alpha {
+            alpha = static_eval;
+        }
+
+        let mut moves = board.gen_moves();
+        if moves.len() == 0 {
+            if board.curr_state().checkers().any() {
+                return -Self::SCORE_WIN + ply;
+            }
+            return 0;
+        }
+        self.order_moves(board, &mut moves, None);
+
+        let mut best_score = static_eval;
+
+        for mv in moves.iter() {
+            let mv = *mv;
+            let capture = board.piece_on(mv.to_sq()).is_some();
+            if !capture {
+                continue;
+            }
+
+            board.make_move(mv);
+            self.nodes += 1;
+            
+            let score = -self.qsearch(board, ply + 1, -beta, -alpha);
+            board.unmake_move();
+
+            if self.stop {
+                return 0;
+            }
+
+            if score > best_score {
+                best_score = score;
+            }
+
+            if score > alpha {
+                alpha = score;
+            }
+
+            if score >= beta {
+                break;
+            }
+        }
+
+        best_score
+    }
+
     fn alpha_beta(
         &mut self,
         board: &mut ThreeCheckBoard,
@@ -142,7 +214,7 @@ impl ThreeCheckSearch {
         }
 
         if depth <= 0 {
-            return ThreeCheckEval::evaluate(board);
+            return self.qsearch(board, ply, alpha, beta);
         }
 
         if !in_check && !root {
