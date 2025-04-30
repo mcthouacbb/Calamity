@@ -14,13 +14,13 @@ impl EvalData {
             attacked_by: [[Bitboard::NONE; 6]; 2],
         };
 
-        let wPawnAtks = attacks::pawn_attacks_bb(Color::White, state.colored_pieces(Piece::WhitePawn));
-        let bPawnAtks = attacks::pawn_attacks_bb(Color::Black, state.colored_pieces(Piece::BlackPawn));
+        let w_pawn_atks = attacks::pawn_attacks_bb(Color::White, state.colored_pieces(Piece::WhitePawn));
+        let b_pawn_atks = attacks::pawn_attacks_bb(Color::Black, state.colored_pieces(Piece::BlackPawn));
 
-        result.attacked[Color::White as usize] |= wPawnAtks;
-        result.attacked_by[Color::White as usize][PieceType::Pawn as usize] |= wPawnAtks;
-        result.attacked[Color::Black as usize] |= bPawnAtks;
-        result.attacked_by[Color::Black as usize][PieceType::Pawn as usize] |= bPawnAtks;
+        result.attacked[Color::White as usize] |= w_pawn_atks;
+        result.attacked_by[Color::White as usize][PieceType::Pawn as usize] |= w_pawn_atks;
+        result.attacked[Color::Black as usize] |= b_pawn_atks;
+        result.attacked_by[Color::Black as usize][PieceType::Pawn as usize] |= b_pawn_atks;
 
         result
     }
@@ -118,7 +118,7 @@ fn evaluate_piece(state: &ThreeCheckState, eval_data: &mut EvalData, color: Colo
     eval
 }
 
-fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) {
+fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) -> i32 {
     let their_king = state.king_sq(color.flip());
 
     let safe = !eval_data.attacked[color.flip() as usize];
@@ -129,10 +129,11 @@ fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) {
     let queen_checks = bishop_checks | rook_checks;
 
     let mut eval = 0;
-    eval += 30 * (knight_checks & eval_data.attacked_by[color as usize][PieceType::Knight as usize] & safe).popcount();
-    eval += 30 * (bishop_checks & eval_data.attacked_by[color as usize][PieceType::Bishop as usize] & safe).popcount();
-    eval += 50 * (rook_checks & eval_data.attacked_by[color as usize][PieceType::Rook as usize] & safe).popcount();
-    eval += 50 * (queen_checks & eval_data.attacked_by[color as usize][PieceType::Queen as usize] & safe).popcount();
+    eval += 50 * (knight_checks & eval_data.attacked_by[color as usize][PieceType::Knight as usize] & safe).popcount() as i32;
+    eval += 50 * (bishop_checks & eval_data.attacked_by[color as usize][PieceType::Bishop as usize] & safe).popcount() as i32;
+    eval += 70 * (rook_checks & eval_data.attacked_by[color as usize][PieceType::Rook as usize] & safe).popcount() as i32;
+    eval += 90 * (queen_checks & eval_data.attacked_by[color as usize][PieceType::Queen as usize] & safe).popcount() as i32;
+    eval
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -163,6 +164,7 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
 
         eval += eval_psqt(state, Color::White) - eval_psqt(state, Color::Black);
         eval += evaluate_pieces(state, &mut eval_data, Color::White) - evaluate_pieces(state, &mut eval_data, Color::Black);
+        eval += evaluate_king(state, &eval_data, Color::White) - evaluate_king(state, &eval_data, Color::Black);
 
         eval += CHECK_PENALTY[state.check_count(Color::White) as usize]
             - CHECK_PENALTY[state.check_count(Color::Black) as usize];
