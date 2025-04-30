@@ -50,6 +50,7 @@ pub struct ThreeCheckSearch {
     start_time: Instant,
     limits: SearchLimits,
     tt: TT<TTEntry>,
+    history: [[[i32; 64]; 64]; 2],
 }
 
 impl ThreeCheckSearch {
@@ -64,6 +65,7 @@ impl ThreeCheckSearch {
             start_time: Instant::now(),
             limits: SearchLimits::default(),
             tt: TT::new(16),
+            history: [[[0; 64]; 64]; 2],
         }
     }
 
@@ -76,7 +78,7 @@ impl ThreeCheckSearch {
         if let Some(captured) = state.piece_at(mv.to_sq()) {
             return mvv_lva(captured.piece_type(), moving) + 100;
         }
-        0
+        self.history[state.stm() as usize][mv.from_sq().value() as usize][mv.to_sq().value() as usize] - 10000000
     }
 
     fn order_moves(
@@ -176,6 +178,7 @@ impl ThreeCheckSearch {
 
         for mv in moves.iter() {
             let mv = *mv;
+            let capture = board.piece_on(mv.to_sq()).is_none();
             // three_check uses legal movegen
             board.make_move(mv);
             self.nodes += 1;
@@ -205,6 +208,9 @@ impl ThreeCheckSearch {
 
             if score >= beta {
                 tt_bound = TTBound::LOWER;
+                if !capture {
+                    self.history[board.curr_state().stm() as usize][mv.from_sq().value() as usize][mv.to_sq().value() as usize] += depth * depth;
+                }
                 break;
             }
         }
@@ -236,6 +242,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         self.nodes = 0;
         self.root_best_move = None;
         self.stop = false;
+        self.history = [[[0; 64]; 64]; 2];
         let mut tmp_board = board.clone();
 
         self.start_time = Instant::now();
