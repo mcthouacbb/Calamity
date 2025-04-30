@@ -1,6 +1,30 @@
-use crate::games::three_check::{attacks, Color, Piece, PieceType, ThreeCheckBoard, ThreeCheckState};
+use crate::games::three_check::{attacks, Bitboard, Color, Piece, PieceType, ThreeCheckBoard, ThreeCheckState};
 
 use super::Eval;
+
+struct EvalData {
+    attacked: [Bitboard; 2],
+    attacked_by: [[Bitboard; 6]; 2],
+}
+
+impl EvalData {
+    fn new(state: &ThreeCheckState) -> Self {
+        let mut result = Self {
+            attacked: [Bitboard::NONE; 2],
+            attacked_by: [[Bitboard::NONE; 6]; 2],
+        };
+
+        let wPawnAtks = attacks::pawn_attacks_bb(Color::White, state.colored_pieces(Piece::WhitePawn));
+        let bPawnAtks = attacks::pawn_attacks_bb(Color::Black, state.colored_pieces(Piece::BlackPawn));
+
+        result.attacked[Color::White as usize] |= wPawnAtks;
+        result.attacked_by[Color::White as usize][PieceType::Pawn as usize] |= wPawnAtks;
+        result.attacked[Color::Black as usize] |= bPawnAtks;
+        result.attacked_by[Color::Black as usize][PieceType::Pawn as usize] |= bPawnAtks;
+
+        result
+    }
+}
 
 const PST_RANK: [i32; 48] = [
     0, -12, -14, -13, -1, 40, 114, 0, // Pawn
@@ -43,16 +67,16 @@ fn eval_psqt(state: &ThreeCheckState, color: Color) -> i32 {
     eval
 }
 
-fn evaluate_pieces(state: &ThreeCheckState, color: Color) -> i32 {
+fn evaluate_pieces(state: &ThreeCheckState, eval_data: &mut EvalData, color: Color) -> i32 {
     let mut eval = 0;
-    eval += evaluate_piece(state, color, PieceType::Knight);
-    eval += evaluate_piece(state, color, PieceType::Bishop);
-    eval += evaluate_piece(state, color, PieceType::Rook);
-    eval += evaluate_piece(state, color, PieceType::Queen);
+    eval += evaluate_piece(state, eval_data, color, PieceType::Knight);
+    eval += evaluate_piece(state, eval_data, color, PieceType::Bishop);
+    eval += evaluate_piece(state, eval_data, color, PieceType::Rook);
+    eval += evaluate_piece(state, eval_data, color, PieceType::Queen);
     eval
 }
 
-fn evaluate_piece(state: &ThreeCheckState, color: Color, pt: PieceType) -> i32 {
+fn evaluate_piece(state: &ThreeCheckState, eval_data: &mut EvalData, color: Color, pt: PieceType) -> i32 {
     let mut eval = 0;
     let mut bb = state.colored_pieces(Piece::new(color, pt));
     let opp_pawn_atks = attacks::pawn_attacks_bb(color.flip(), state.colored_pieces(Piece::new(color.flip(), PieceType::Pawn)));
@@ -62,21 +86,29 @@ fn evaluate_piece(state: &ThreeCheckState, color: Color, pt: PieceType) -> i32 {
         match pt {
             PieceType::Knight => {
                 let atk = attacks::knight_attacks(sq);
+                eval_data.attacked[color as usize] |= atk;
+                eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 735 - 2896) / 100;
             }
             PieceType::Bishop => {
                 let atk = attacks::bishop_attacks(sq, state.occ());
+                eval_data.attacked[color as usize] |= atk;
+                eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 487 - 2993) / 100;
             }
             PieceType::Rook => {
                 let atk = attacks::rook_attacks(sq, state.occ());
+                eval_data.attacked[color as usize] |= atk;
+                eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 486 - 3485) / 100;
             }
             PieceType::Queen => {
                 let atk = attacks::queen_attacks(sq, state.occ());
+                eval_data.attacked[color as usize] |= atk;
+                eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount().min(20) as i32 * 536 - 5390) / 100;
             }
@@ -84,6 +116,23 @@ fn evaluate_piece(state: &ThreeCheckState, color: Color, pt: PieceType) -> i32 {
         }
     }
     eval
+}
+
+fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) {
+    let their_king = state.king_sq(color.flip());
+
+    let safe = !eval_data.attacked[color.flip() as usize];
+
+    let knight_checks = attacks::knight_attacks(their_king);
+    let bishop_checks = attacks::bishop_attacks(their_king, state.occ());
+    let rook_checks = attacks::rook_attacks(their_king, state.occ());
+    let queen_checks = bishop_checks | rook_checks;
+
+    let mut eval = 0;
+    eval += 200 * (knight_checks & eval_data.attacked_by[color as usize][PieceType::Knight as usize] & safe).popcount();
+    eval += 200 * (bishop_checks & eval_data.attacked_by[color as usize][PieceType::Bishop as usize] & safe).popcount();
+    eval += 200 * (rook_checks & eval_data.attacked_by[color as usize][PieceType::Rook as usize] & safe).popcount();
+    eval += 200 * (queen_checks & eval_data.attacked_by[color as usize][PieceType::Queen as usize] & safe).popcount();
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -110,8 +159,10 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
             * (state.colored_pieces(Piece::WhiteQueen).popcount() as i32
                 - state.colored_pieces(Piece::BlackQueen).popcount() as i32);
         
+        let mut eval_data = EvalData::new(state);
+
         eval += eval_psqt(state, Color::White) - eval_psqt(state, Color::Black);
-        eval += evaluate_pieces(state, Color::White) - evaluate_pieces(state, Color::Black);
+        eval += evaluate_pieces(state, &mut eval_data, Color::White) - evaluate_pieces(state, &mut eval_data, Color::Black);
 
         eval += CHECK_PENALTY[state.check_count(Color::White) as usize]
             - CHECK_PENALTY[state.check_count(Color::Black) as usize];
