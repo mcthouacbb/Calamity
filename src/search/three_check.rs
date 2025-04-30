@@ -164,7 +164,7 @@ impl ThreeCheckSearch {
         best_score
     }
 
-    fn alpha_beta(
+    fn alpha_beta<const PV: bool>(
         &mut self,
         board: &mut ThreeCheckBoard,
         depth: i32,
@@ -190,20 +190,21 @@ impl ThreeCheckSearch {
             }
         }
 
+        let root = ply == 0;
+
         if board.curr_state().check_count(board.curr_state().stm()) >= 3 {
             return -Self::SCORE_WIN + ply;
         }
 
-        if board.curr_state().is_drawn() {
+        if !root && board.curr_state().is_drawn() {
             return 0;
         }
 
         let in_check = board.curr_state().checkers().any();
-        let root = ply == 0;
 
         let tt_entry = self.tt.probe(board.curr_state().zkey().value());
 
-        if !root {
+        if !PV {
             if let Some(entry) = tt_entry {
                 if entry.depth as i32 >= depth
                     && (entry.bound == TTBound::EXACT
@@ -219,7 +220,7 @@ impl ThreeCheckSearch {
             return self.qsearch(board, ply, alpha, beta);
         }
 
-        if !in_check && !root {
+        if !in_check && !PV {
             let static_eval = ThreeCheckEval::evaluate(board);
             if depth <= 4 && static_eval - 100 * depth >= beta {
                 return static_eval;
@@ -228,7 +229,7 @@ impl ThreeCheckSearch {
             if depth >= 3 {
                 let r = 3;
                 board.make_move(Move::NULL);
-                let score = -self.alpha_beta(board, depth - r, ply + 1, -beta, -beta + 1);
+                let score = -self.alpha_beta::<false>(board, depth - r, ply + 1, -beta, -beta + 1);
                 board.unmake_move();
 
                 if score >= beta {
@@ -249,6 +250,7 @@ impl ThreeCheckSearch {
         let mut best_score = -Self::SCORE_WIN;
         let mut best_move = None;
         let mut tt_bound = TTBound::UPPER;
+        let mut moves_played = 0;
 
         for mv in moves.iter() {
             let mv = *mv;
@@ -256,10 +258,17 @@ impl ThreeCheckSearch {
             // three_check uses legal movegen
             board.make_move(mv);
             self.nodes += 1;
+            moves_played += 1;
+            let gives_check = board.curr_state().checkers().any();
 
             let mut score = 0;
-            let new_depth = depth - 1 + board.curr_state().checkers().any() as i32;
-            score = -self.alpha_beta(board, new_depth, ply + 1, -beta, -alpha);
+            let new_depth = depth - 1 + gives_check as i32;
+            if !PV || moves_played > 1 {
+                score = -self.alpha_beta::<false>(board, new_depth, ply + 1, -alpha - 1, -alpha);
+            }
+            if PV && (moves_played == 1 || score > alpha) {
+                score = -self.alpha_beta::<true>(board, new_depth, ply + 1, -beta, -alpha);
+            }
 
             board.unmake_move();
             if self.stop {
@@ -332,7 +341,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         for depth in 1..max_depth {
             self.root_depth = depth;
             let iter_score =
-                self.alpha_beta(&mut tmp_board, depth, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
+                self.alpha_beta::<true>(&mut tmp_board, depth, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
             if self.stop {
                 break;
             }
