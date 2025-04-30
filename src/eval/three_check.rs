@@ -1,7 +1,4 @@
-use crate::{
-    games::three_check::{Color, Piece, PieceType, ThreeCheckBoard, ThreeCheckState},
-    search::three_check::ThreeCheckSearch,
-};
+use crate::games::three_check::{attacks, Color, Piece, PieceType, ThreeCheckBoard, ThreeCheckState};
 
 use super::Eval;
 
@@ -46,6 +43,49 @@ fn eval_psqt(state: &ThreeCheckState, color: Color) -> i32 {
     eval
 }
 
+fn evaluate_pieces(state: &ThreeCheckState, color: Color) -> i32 {
+    let mut eval = 0;
+    eval += evaluate_piece(state, color, PieceType::Knight);
+    eval += evaluate_piece(state, color, PieceType::Bishop);
+    eval += evaluate_piece(state, color, PieceType::Rook);
+    eval += evaluate_piece(state, color, PieceType::Queen);
+    eval
+}
+
+fn evaluate_piece(state: &ThreeCheckState, color: Color, pt: PieceType) -> i32 {
+    let mut eval = 0;
+    let mut bb = state.colored_pieces(Piece::new(color, pt));
+    let opp_pawn_atks = attacks::pawn_attacks_bb(color.flip(), state.colored_pieces(Piece::new(color.flip(), PieceType::Pawn)));
+    let mobility_area = !opp_pawn_atks;
+    while bb.any() {
+        let sq = bb.poplsb();
+        match pt {
+            PieceType::Knight => {
+                let atk = attacks::knight_attacks(sq);
+                let mobility = atk & mobility_area;
+                eval += (mobility.popcount() as i32 * 735 - 2896) / 100;
+            }
+            PieceType::Bishop => {
+                let atk = attacks::bishop_attacks(sq, state.occ());
+                let mobility = atk & mobility_area;
+                eval += (mobility.popcount() as i32 * 487 - 2993) / 100;
+            }
+            PieceType::Rook => {
+                let atk = attacks::rook_attacks(sq, state.occ());
+                let mobility = atk & mobility_area;
+                eval += (mobility.popcount() as i32 * 486 - 3485) / 100;
+            }
+            PieceType::Queen => {
+                let atk = attacks::queen_attacks(sq, state.occ());
+                let mobility = atk & mobility_area;
+                eval += (mobility.popcount().min(20) as i32 * 536 - 5390) / 100;
+            }
+            _ => unreachable!()
+        }
+    }
+    eval
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ThreeCheckEval {}
 
@@ -71,6 +111,7 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
                 - state.colored_pieces(Piece::BlackQueen).popcount() as i32);
         
         eval += eval_psqt(state, Color::White) - eval_psqt(state, Color::Black);
+        eval += evaluate_pieces(state, Color::White) - evaluate_pieces(state, Color::Black);
 
         eval += CHECK_PENALTY[state.check_count(Color::White) as usize]
             - CHECK_PENALTY[state.check_count(Color::Black) as usize];
