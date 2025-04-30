@@ -178,7 +178,7 @@ impl ThreeCheckSearch {
 
         for mv in moves.iter() {
             let mv = *mv;
-            let capture = board.piece_on(mv.to_sq()).is_none();
+            let capture = board.piece_on(mv.to_sq()).is_some();
             // three_check uses legal movegen
             board.make_move(mv);
             self.nodes += 1;
