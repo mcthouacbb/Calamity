@@ -78,7 +78,9 @@ impl ThreeCheckSearch {
         if let Some(captured) = state.piece_at(mv.to_sq()) {
             return mvv_lva(captured.piece_type(), moving) + 100;
         }
-        self.history[state.stm() as usize][mv.from_sq().value() as usize][mv.to_sq().value() as usize] - 10000000
+        self.history[state.stm() as usize][mv.from_sq().value() as usize]
+            [mv.to_sq().value() as usize]
+            - 10000000
     }
 
     fn order_moves(
@@ -138,7 +140,7 @@ impl ThreeCheckSearch {
 
             board.make_move(mv);
             self.nodes += 1;
-            
+
             let score = -self.qsearch(board, ply + 1, -beta, -alpha);
             board.unmake_move();
 
@@ -281,7 +283,9 @@ impl ThreeCheckSearch {
             if score >= beta {
                 tt_bound = TTBound::LOWER;
                 if !capture {
-                    self.history[board.curr_state().stm() as usize][mv.from_sq().value() as usize][mv.to_sq().value() as usize] += depth * depth;
+                    self.history[board.curr_state().stm() as usize]
+                        [mv.from_sq().value() as usize][mv.to_sq().value() as usize] +=
+                        depth * depth;
                 }
                 break;
             }
