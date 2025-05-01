@@ -51,6 +51,11 @@ const PST_FILE: [i32; 48] = [
     -22, -9, 2, 6, 5, 6, 6, 6, // Queen
     -13, 3, 1, 0, -2, -2, 6, -10, // King
 ];
+const MATERIAL: [i32; 6] = [78, 308, 319, 483, 966, 0];
+
+pub fn piece_value(pt: PieceType) -> i32 {
+    MATERIAL[pt as usize]
+}
 
 fn eval_psqt(state: &ThreeCheckState, color: Color) -> i32 {
     let mut eval = 0;
@@ -71,6 +76,7 @@ fn eval_psqt(state: &ThreeCheckState, color: Color) -> i32 {
             let mirror = if color == Color::Black { 0b111 } else { 0 };
             eval += PST_RANK[(sq.rank() as usize ^ mirror) + 8 * i];
             eval += PST_FILE[sq.file() as usize + 8 * i];
+            eval += MATERIAL[i];
         }
     }
     eval
@@ -162,22 +168,7 @@ impl Eval<ThreeCheckBoard> for ThreeCheckEval {
         const CHECK_PENALTY: [i32; 3] = [0, -200, -750];
 
         let state = board.curr_state();
-        let mut eval = 78
-            * (state.colored_pieces(Piece::WhitePawn).popcount() as i32
-                - state.colored_pieces(Piece::BlackPawn).popcount() as i32);
-        eval += 308
-            * (state.colored_pieces(Piece::WhiteKnight).popcount() as i32
-                - state.colored_pieces(Piece::BlackKnight).popcount() as i32);
-        eval += 319
-            * (state.colored_pieces(Piece::WhiteBishop).popcount() as i32
-                - state.colored_pieces(Piece::BlackBishop).popcount() as i32);
-        eval += 483
-            * (state.colored_pieces(Piece::WhiteRook).popcount() as i32
-                - state.colored_pieces(Piece::BlackRook).popcount() as i32);
-        eval += 966
-            * (state.colored_pieces(Piece::WhiteQueen).popcount() as i32
-                - state.colored_pieces(Piece::BlackQueen).popcount() as i32);
-
+        let mut eval = 0;
         let mut eval_data = EvalData::new(state);
 
         eval += eval_psqt(state, Color::White) - eval_psqt(state, Color::Black);
