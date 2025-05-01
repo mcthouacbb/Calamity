@@ -263,9 +263,23 @@ impl ThreeCheckSearch {
 
             let mut score = 0;
             let new_depth = depth - 1 + gives_check as i32;
-            if !PV || moves_played > 1 {
+            if moves_played >= 4 && depth >= 3 && !capture && !gives_check {
+                let reduction = 1;
+                score = -self.alpha_beta::<false>(
+                    board,
+                    new_depth - reduction,
+                    ply + 1,
+                    -alpha - 1,
+                    -alpha,
+                );
+                if score > alpha && reduction > 0 {
+                    score =
+                        -self.alpha_beta::<false>(board, new_depth, ply + 1, -alpha - 1, -alpha);
+                }
+            } else if !PV || moves_played > 1 {
                 score = -self.alpha_beta::<false>(board, new_depth, ply + 1, -alpha - 1, -alpha);
             }
+
             if PV && (moves_played == 1 || score > alpha) {
                 score = -self.alpha_beta::<true>(board, new_depth, ply + 1, -beta, -alpha);
             }
@@ -340,8 +354,13 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         let mut best_move = None;
         for depth in 1..max_depth {
             self.root_depth = depth;
-            let iter_score =
-                self.alpha_beta::<true>(&mut tmp_board, depth, 0, -Self::SCORE_WIN, Self::SCORE_WIN);
+            let iter_score = self.alpha_beta::<true>(
+                &mut tmp_board,
+                depth,
+                0,
+                -Self::SCORE_WIN,
+                Self::SCORE_WIN,
+            );
             if self.stop {
                 break;
             }
