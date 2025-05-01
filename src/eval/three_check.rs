@@ -8,6 +8,8 @@ struct EvalData {
     mobility_area: [Bitboard; 2],
     attacked: [Bitboard; 2],
     attacked_by: [[Bitboard; 6]; 2],
+    king_ring: [Bitboard; 2],
+    king_ring_attacks: [i32; 2],
 }
 
 impl EvalData {
@@ -16,6 +18,8 @@ impl EvalData {
             mobility_area: [Bitboard::NONE; 2],
             attacked: [Bitboard::NONE; 2],
             attacked_by: [[Bitboard::NONE; 6]; 2],
+            king_ring: [Bitboard::NONE; 2],
+            king_ring_attacks: [0; 2],
         };
 
         let w_pawn_atks =
@@ -30,6 +34,14 @@ impl EvalData {
 
         result.mobility_area[Color::White as usize] = !b_pawn_atks;
         result.mobility_area[Color::Black as usize] = !w_pawn_atks;
+
+        result.king_ring[Color::White as usize] = attacks::king_attacks(state.king_sq(Color::White));
+        result.king_ring[Color::White as usize] |= result.king_ring[Color::White as usize].north();
+        result.king_ring[Color::White as usize].unset(state.king_sq(Color::White));
+
+        result.king_ring[Color::Black as usize] = attacks::king_attacks(state.king_sq(Color::Black));
+        result.king_ring[Color::Black as usize] |= result.king_ring[Color::Black as usize].south();
+        result.king_ring[Color::Black as usize].unset(state.king_sq(Color::Black));
 
         result
     }
@@ -103,6 +115,8 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 735 - 2896) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                eval_data.king_ring_attacks[color as usize] += ring_attacks.popcount() as i32;
             }
             PieceType::Bishop => {
                 let atk = attacks::bishop_attacks(sq, state.occ());
@@ -110,6 +124,8 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 487 - 2993) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                eval_data.king_ring_attacks[color as usize] += ring_attacks.popcount() as i32;
             }
             PieceType::Rook => {
                 let atk = attacks::rook_attacks(sq, state.occ());
@@ -117,6 +133,8 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 486 - 3485) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                eval_data.king_ring_attacks[color as usize] += ring_attacks.popcount() as i32;
             }
             PieceType::Queen => {
                 let atk = attacks::queen_attacks(sq, state.occ());
@@ -124,6 +142,8 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount().min(20) as i32 * 536 - 5390) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                eval_data.king_ring_attacks[color as usize] += ring_attacks.popcount() as i32;
             }
             _ => unreachable!(),
         }
@@ -151,6 +171,7 @@ fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) ->
     eval += 50 * (bishop_checks & safe).popcount() as i32;
     eval += 70 * (rook_checks & safe).popcount() as i32;
     eval += 90 * (queen_checks & safe).popcount() as i32;
+    eval += 10 * eval_data.king_ring_attacks[color as usize];
     eval
 }
 
