@@ -264,7 +264,8 @@ impl ThreeCheckSearch {
             let mut score = 0;
             let new_depth = depth - 1 + gives_check as i32;
             if moves_played >= 4 && depth >= 3 && !capture && !gives_check {
-                let reduction = 1;
+                let reduction =
+                    (0.77 + (moves_played as f64).ln() * (depth as f64).ln() / 2.36) as i32;
                 score = -self.alpha_beta::<false>(
                     board,
                     new_depth - reduction,
