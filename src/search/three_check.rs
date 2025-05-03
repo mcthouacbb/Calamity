@@ -220,8 +220,9 @@ impl ThreeCheckSearch {
             return self.qsearch(board, ply, alpha, beta);
         }
 
+        let static_eval = ThreeCheckEval::evaluate(board);
+
         if !in_check && !PV {
-            let static_eval = ThreeCheckEval::evaluate(board);
             if depth <= 4 && static_eval - 100 * depth >= beta {
                 return static_eval;
             }
@@ -257,9 +258,17 @@ impl ThreeCheckSearch {
             let capture = board.piece_on(mv.to_sq()).is_some();
             // three_check uses legal movegen
             board.make_move(mv);
+            let gives_check = board.curr_state().checkers().any();
+
+            if !root && best_score > -Self::SCORE_WIN + 128 && !capture && !gives_check {
+                if !in_check && depth <= 4 && static_eval + 100 + 150 * depth <= alpha {
+                    board.unmake_move();
+                    continue;
+                }
+            }
+            
             self.nodes += 1;
             moves_played += 1;
-            let gives_check = board.curr_state().checkers().any();
 
             let mut score = 0;
             let new_depth = depth - 1 + gives_check as i32;
