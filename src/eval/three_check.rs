@@ -151,12 +151,14 @@ fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) ->
     bishop_checks &= eval_data.attacked_by[color as usize][PieceType::Bishop as usize];
     rook_checks &= eval_data.attacked_by[color as usize][PieceType::Rook as usize];
     queen_checks &= eval_data.attacked_by[color as usize][PieceType::Queen as usize];
+    let all_checks = knight_checks | bishop_checks | rook_checks | queen_checks;
 
     let mut eval = 0;
     eval += 50 * (knight_checks & safe).popcount() as i32;
     eval += 50 * (bishop_checks & safe).popcount() as i32;
     eval += 70 * (rook_checks & safe).popcount() as i32;
     eval += 90 * (queen_checks & safe).popcount() as i32;
+    eval += 40 * (all_checks & !safe).popcount() as i32;
     eval
 }
 
