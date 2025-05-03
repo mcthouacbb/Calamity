@@ -159,7 +159,7 @@ fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) ->
     eval += 70 * (rook_checks & safe).popcount() as i32;
     eval += 90 * (queen_checks & safe).popcount() as i32;
     eval += 40 * (all_checks & !safe).popcount() as i32;
-    eval
+    eval * (2 + state.check_count(color.flip()) as i32) / 2
 }
 
 #[derive(Debug, Default, Clone, Copy)]
