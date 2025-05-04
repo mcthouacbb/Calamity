@@ -8,6 +8,9 @@ struct EvalData {
     mobility_area: [Bitboard; 2],
     attacked: [Bitboard; 2],
     attacked_by: [[Bitboard; 6]; 2],
+    king_ring: [Bitboard; 2],
+    attack_weight: [i32; 2],
+    attacker_count: [i32; 2],
 }
 
 impl EvalData {
@@ -16,6 +19,9 @@ impl EvalData {
             mobility_area: [Bitboard::NONE; 2],
             attacked: [Bitboard::NONE; 2],
             attacked_by: [[Bitboard::NONE; 6]; 2],
+            king_ring: [Bitboard::NONE; 2],
+            attack_weight: [0; 2],
+            attacker_count: [0; 2],
         };
 
         let w_pawn_atks =
@@ -30,6 +36,14 @@ impl EvalData {
 
         result.mobility_area[Color::White as usize] = !b_pawn_atks;
         result.mobility_area[Color::Black as usize] = !w_pawn_atks;
+
+        result.king_ring[Color::White as usize] = attacks::king_attacks(state.king_sq(Color::White));
+        result.king_ring[Color::White as usize] |= result.king_ring[Color::White as usize].north();
+        result.king_ring[Color::White as usize].unset(state.king_sq(Color::White));
+
+        result.king_ring[Color::Black as usize] = attacks::king_attacks(state.king_sq(Color::Black));
+        result.king_ring[Color::Black as usize] |= result.king_ring[Color::Black as usize].south();
+        result.king_ring[Color::Black as usize].unset(state.king_sq(Color::Black));
 
         result
     }
@@ -109,6 +123,11 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 735 - 2896) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                if ring_attacks.any() {
+                    eval_data.attack_weight[color as usize] += 35;
+                    eval_data.attacker_count[color as usize] += 1;
+                }
             }
             PieceType::Bishop => {
                 let atk = attacks::bishop_attacks(sq, state.occ());
@@ -116,6 +135,11 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 487 - 2993) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                if ring_attacks.any() {
+                    eval_data.attack_weight[color as usize] += 15;
+                    eval_data.attacker_count[color as usize] += 1;
+                }
             }
             PieceType::Rook => {
                 let atk = attacks::rook_attacks(sq, state.occ());
@@ -123,6 +147,11 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount() as i32 * 486 - 3485) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                if ring_attacks.any() {
+                    eval_data.attack_weight[color as usize] += 25;
+                    eval_data.attacker_count[color as usize] += 1;
+                }
             }
             PieceType::Queen => {
                 let atk = attacks::queen_attacks(sq, state.occ());
@@ -130,6 +159,11 @@ fn evaluate_piece(
                 eval_data.attacked_by[color as usize][pt as usize] |= atk;
                 let mobility = atk & mobility_area;
                 eval += (mobility.popcount().min(20) as i32 * 536 - 5390) / 100;
+                let ring_attacks = atk & eval_data.king_ring[color.flip() as usize];
+                if ring_attacks.any() {
+                    eval_data.attack_weight[color as usize] += 5;
+                    eval_data.attacker_count[color as usize] += 1;
+                }
             }
             _ => unreachable!(),
         }
@@ -159,6 +193,7 @@ fn evaluate_king(state: &ThreeCheckState, eval_data: &EvalData, color: Color) ->
     eval += 70 * (rook_checks & safe).popcount() as i32;
     eval += 90 * (queen_checks & safe).popcount() as i32;
     eval += 40 * (all_checks & !safe).popcount() as i32;
+    eval += eval_data.attack_weight[color as usize] * eval_data.attacker_count[color as usize];
     eval * (2 + state.check_count(color.flip()) as i32) / 2
 }
 
