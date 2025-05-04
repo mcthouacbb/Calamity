@@ -3,6 +3,7 @@ mod castling_rooks;
 mod movegen;
 pub mod types;
 mod zobrist;
+pub mod see;
 
 use core::fmt;
 
@@ -10,6 +11,7 @@ use castling_rooks::CastlingRooks;
 pub use movegen::MoveList;
 pub use types::{Bitboard, Color, Move, MoveKind, Piece, PieceType, Square};
 pub use zobrist::ZobristKey;
+pub use see::see;
 
 use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
 
@@ -466,6 +468,22 @@ impl ThreeCheckState {
         let occ = self.occ() ^ self.colored_pieces(Piece::new(c.flip(), PieceType::King));
 
         (attacks::pawn_attacks(c.flip(), sq) & pawns)
+            | (attacks::knight_attacks(sq) & knights)
+            | (attacks::king_attacks(sq) & king)
+            | (attacks::bishop_attacks(sq, occ) & diags)
+            | (attacks::rook_attacks(sq, occ) & hvs)
+    }
+
+    pub fn all_attackers_to(&self, sq: Square, occ: Bitboard) -> Bitboard {
+        let diags = self.pieces(PieceType::Bishop) | self.pieces(PieceType::Queen);
+        let hvs = self.pieces(PieceType::Rook) | self.pieces(PieceType::Queen);
+        let wpawns = self.colored_pieces(Piece::new(Color::White, PieceType::Pawn));
+        let bpawns = self.colored_pieces(Piece::new(Color::Black, PieceType::Pawn));
+        let knights = self.pieces(PieceType::Knight);
+        let king = self.pieces(PieceType::King);
+
+        (attacks::pawn_attacks(Color::White, sq) & bpawns)
+            | (attacks::pawn_attacks(Color::Black, sq) & wpawns)
             | (attacks::knight_attacks(sq) & knights)
             | (attacks::king_attacks(sq) & king)
             | (attacks::bishop_attacks(sq, occ) & diags)
