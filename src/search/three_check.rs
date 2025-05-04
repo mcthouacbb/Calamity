@@ -4,7 +4,7 @@ use crate::{
     eval::{Eval, ThreeCheckEval},
     games::{
         board::Board,
-        three_check::{Move, MoveList, PieceType, ThreeCheckBoard},
+        three_check::{see, Move, MoveList, PieceType, ThreeCheckBoard},
     },
 };
 
@@ -135,6 +135,10 @@ impl ThreeCheckSearch {
             let mv = *mv;
             let capture = board.piece_on(mv.to_sq()).is_some();
             if !capture {
+                continue;
+            }
+
+            if !see(board.curr_state(), mv, 0) {
                 continue;
             }
 
