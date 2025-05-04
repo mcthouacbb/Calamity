@@ -337,6 +337,38 @@ impl ThreeCheckSearch {
         best_score
     }
 
+    fn asp_windows(&mut self, board: &mut ThreeCheckBoard, depth: i32, prev_score: i32) -> i32 {
+        let mut alpha = -Self::SCORE_WIN;
+        let mut beta = Self::SCORE_WIN;
+        let mut delta = 30;
+        if depth >= 5 {
+            alpha = prev_score - delta;
+            beta = prev_score + delta;
+        }
+        loop {
+            let iter_score = self.alpha_beta::<true>(
+                board,
+                depth,
+                0,
+                alpha,
+                beta,
+            );
+
+            if self.stop {
+                return 0;
+            }
+
+            if alpha < iter_score && iter_score < beta {
+                return iter_score;
+            } else if iter_score <= alpha {
+                alpha = iter_score - delta;
+            } else {
+                beta = iter_score + delta;
+            }
+            delta *= 2;
+        }
+    }
+
     pub fn clear(&mut self) {
         self.tt.clear();
     }
@@ -364,13 +396,7 @@ impl Search<ThreeCheckBoard> for ThreeCheckSearch {
         let mut best_move = None;
         for depth in 1..max_depth {
             self.root_depth = depth;
-            let iter_score = self.alpha_beta::<true>(
-                &mut tmp_board,
-                depth,
-                0,
-                -Self::SCORE_WIN,
-                Self::SCORE_WIN,
-            );
+            let iter_score = self.asp_windows(&mut tmp_board, depth, score);
             if self.stop {
                 break;
             }
