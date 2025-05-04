@@ -37,11 +37,13 @@ impl EvalData {
         result.mobility_area[Color::White as usize] = !b_pawn_atks;
         result.mobility_area[Color::Black as usize] = !w_pawn_atks;
 
-        result.king_ring[Color::White as usize] = attacks::king_attacks(state.king_sq(Color::White));
+        result.king_ring[Color::White as usize] =
+            attacks::king_attacks(state.king_sq(Color::White));
         result.king_ring[Color::White as usize] |= result.king_ring[Color::White as usize].north();
         result.king_ring[Color::White as usize].unset(state.king_sq(Color::White));
 
-        result.king_ring[Color::Black as usize] = attacks::king_attacks(state.king_sq(Color::Black));
+        result.king_ring[Color::Black as usize] =
+            attacks::king_attacks(state.king_sq(Color::Black));
         result.king_ring[Color::Black as usize] |= result.king_ring[Color::Black as usize].south();
         result.king_ring[Color::Black as usize].unset(state.king_sq(Color::Black));
 

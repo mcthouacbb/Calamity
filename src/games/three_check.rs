@@ -1,17 +1,17 @@
 pub mod attacks;
 mod castling_rooks;
 mod movegen;
+pub mod see;
 pub mod types;
 mod zobrist;
-pub mod see;
 
 use core::fmt;
 
 use castling_rooks::CastlingRooks;
 pub use movegen::MoveList;
+pub use see::see;
 pub use types::{Bitboard, Color, Move, MoveKind, Piece, PieceType, Square};
 pub use zobrist::ZobristKey;
-pub use see::see;
 
 use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
 

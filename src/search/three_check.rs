@@ -4,7 +4,7 @@ use crate::{
     eval::{Eval, ThreeCheckEval},
     games::{
         board::Board,
-        three_check::{see, Move, MoveList, PieceType, ThreeCheckBoard},
+        three_check::{Move, MoveList, PieceType, ThreeCheckBoard, see},
     },
 };
 
@@ -270,7 +270,7 @@ impl ThreeCheckSearch {
                     continue;
                 }
             }
-            
+
             self.nodes += 1;
             moves_played += 1;
 
@@ -350,13 +350,7 @@ impl ThreeCheckSearch {
             beta = prev_score + delta;
         }
         loop {
-            let iter_score = self.alpha_beta::<true>(
-                board,
-                depth,
-                0,
-                alpha,
-                beta,
-            );
+            let iter_score = self.alpha_beta::<true>(board, depth, 0, alpha, beta);
 
             if self.stop {
                 return 0;
