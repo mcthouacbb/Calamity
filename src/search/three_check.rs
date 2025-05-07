@@ -260,12 +260,17 @@ impl ThreeCheckSearch {
         for mv in moves.iter() {
             let mv = *mv;
             let capture = board.piece_on(mv.to_sq()).is_some();
+            let see_prune = !root && best_score > -Self::SCORE_WIN + 128 && !see::see(board.curr_state(), mv, -150 * depth);
             // three_check uses legal movegen
             board.make_move(mv);
             let gives_check = board.curr_state().checkers().any();
 
-            if !root && best_score > -Self::SCORE_WIN + 128 && !capture && !gives_check {
-                if !in_check && depth <= 4 && static_eval + 100 + 150 * depth <= alpha {
+            if !root && best_score > -Self::SCORE_WIN + 128 && !gives_check {
+                if !in_check && see_prune {
+                    board.unmake_move();
+                    continue;
+                }
+                if !in_check && !capture && depth <= 4 && static_eval + 100 + 150 * depth <= alpha {
                     board.unmake_move();
                     continue;
                 }
