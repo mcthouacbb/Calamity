@@ -13,7 +13,7 @@ pub use see::see;
 pub use types::{Bitboard, Color, Move, MoveKind, Piece, PieceType, Square};
 pub use zobrist::ZobristKey;
 
-use super::board::{CopyMakeBoard, CopyMakeWrapper, GameResult};
+use super::board::{Board, CopyMakeBoard, CopyMakeWrapper, GameResult};
 
 #[derive(Debug, Clone)]
 pub struct ThreeCheckState {
@@ -490,28 +490,6 @@ impl ThreeCheckState {
             | (attacks::rook_attacks(sq, occ) & hvs)
     }
 
-    pub fn is_drawn(&self /*, keys: Vec<ZobristKey>*/) -> bool {
-        if self.half_move_clock >= 100 {
-            return true;
-        }
-        /*let mut count = 1;
-        for &hash in keys
-            .iter()
-            .rev()
-            .take(self.half_move_clock as usize + 1)
-            .skip(3)
-            .step_by(2)
-        {
-            if hash == self.zkey() {
-                count += 1;
-                if count == 3 {
-                    return true;
-                }
-            }
-        }*/
-        return false;
-    }
-
     pub fn checkers(&self) -> Bitboard {
         self.checkers
     }
@@ -645,7 +623,45 @@ impl ThreeCheckState {
     }
 }
 
-impl CopyMakeBoard for ThreeCheckState {
+#[derive(Debug, Clone)]
+pub struct ThreeCheckBoard {
+    states: Vec<ThreeCheckState>,
+    pub keys: Vec<ZobristKey>,
+}
+
+impl ThreeCheckBoard {
+    pub fn curr_state(&self) -> &ThreeCheckState {
+        self.states.last().unwrap()
+    }
+
+    fn curr_state_mut(&mut self) -> &mut ThreeCheckState {
+        self.states.last_mut().unwrap()
+    }
+
+    pub fn is_drawn(&self, two_fold: bool) -> bool {
+        if self.curr_state().half_move_clock >= 100 {
+            return true;
+        }
+        let mut count = 1;
+        for &hash in self.keys
+            .iter()
+            .rev()
+            .take(self.curr_state().half_move_clock as usize + 1)
+            .skip(4)
+            .step_by(2)
+        {
+            if hash == self.curr_state().zkey() {
+                count += 1;
+                if count == 3 - two_fold as i32 {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+impl Board for ThreeCheckBoard {
     type Move = Move;
     type Square = Square;
     type Color = Color;
@@ -653,25 +669,37 @@ impl CopyMakeBoard for ThreeCheckState {
     type MoveList = MoveList;
 
     fn startpos() -> Self {
-        Self::startpos()
+        let mut result = Self {
+            states: vec![ThreeCheckState::startpos()],
+            keys: Vec::new()
+        };
+        result.keys.push(result.states[0].zkey());
+        result
     }
 
     fn from_fen(fen: &str) -> Option<Self> {
-        Self::from_fen(fen)
+        let state = ThreeCheckState::from_fen(fen);
+        if let Some(s) = state {
+            let mut result = Self {
+                states: vec![s],
+                keys: Vec::new()
+            };
+            result.keys.push(result.states[0].zkey());
+            Some(result)
+        } else {
+            None
+        }
     }
 
     // broken for now
     fn game_result(&self) -> super::board::GameResult {
-        // if self.is_drawn() {
-        // return GameResult::DRAW;
-        // }
-
-        if self.check_count(self.stm()) >= 3 {
+        let state = self.curr_state();
+        if state.check_count(state.stm()) >= 3 {
             return GameResult::LOSS;
         }
 
         if self.gen_moves().len() == 0 {
-            if self.checkers().any() {
+            if state.checkers().any() {
                 return GameResult::LOSS;
             } else {
                 return GameResult::DRAW;
@@ -683,21 +711,28 @@ impl CopyMakeBoard for ThreeCheckState {
 
     fn gen_moves(&self) -> Self::MoveList {
         let mut moves = MoveList::new();
-        movegen::movegen(self, &mut moves);
+        movegen::movegen(self.curr_state(), &mut moves);
         moves
     }
 
     fn make_move(&mut self, mv: Self::Move) -> bool {
+        self.states.push(self.curr_state().clone());
         if mv == Move::NULL {
-            self.make_null_move();
+            self.curr_state_mut().make_null_move();
         } else {
-            self.make_move(mv);
+            self.curr_state_mut().make_move(mv);
         }
+        self.keys.push(self.curr_state().zkey());
         true
     }
 
+    fn unmake_move(&mut self) {
+        self.states.pop();
+        self.keys.pop();
+    }
+
     fn piece_on(&self, sq: Self::Square) -> Option<Self::Piece> {
-        self.piece_at(sq)
+        self.curr_state().piece_at(sq)
     }
 }
 
@@ -736,4 +771,8 @@ impl fmt::Display for ThreeCheckState {
     }
 }
 
-pub type ThreeCheckBoard = CopyMakeWrapper<ThreeCheckState>;
+impl fmt::Display for ThreeCheckBoard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.curr_state())
+    }
+}
