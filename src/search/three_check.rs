@@ -107,7 +107,7 @@ impl ThreeCheckSearch {
             return -Self::SCORE_WIN + ply;
         }
 
-        if board.curr_state().is_drawn() {
+        if board.is_drawn(false) {
             return 0;
         }
 
@@ -200,7 +200,7 @@ impl ThreeCheckSearch {
             return -Self::SCORE_WIN + ply;
         }
 
-        if !root && board.curr_state().is_drawn() {
+        if !root && board.is_drawn(!PV) {
             return 0;
         }
 
